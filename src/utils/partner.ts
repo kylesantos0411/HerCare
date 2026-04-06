@@ -145,6 +145,47 @@ interface BuildPartnerSnapshotOptions {
   studyTimer: StudyTimerState;
 }
 
+function getPartnerErrorCode(error: unknown) {
+  return error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : '';
+}
+
+function getPartnerErrorMessage(error: unknown) {
+  return error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+    ? error.message
+    : '';
+}
+
+function createPartnerFriendlyError(error: unknown, fallbackMessage: string) {
+  const errorCode = getPartnerErrorCode(error).toLowerCase();
+  const errorMessage = getPartnerErrorMessage(error).toLowerCase();
+
+  if (
+    errorCode === 'unavailable' ||
+    errorCode === 'deadline-exceeded' ||
+    errorCode === 'cancelled' ||
+    errorCode === 'auth/network-request-failed' ||
+    errorMessage.includes('client is offline') ||
+    errorMessage.includes('offline') ||
+    errorMessage.includes('network')
+  ) {
+    return new Error('This phone is offline right now. Reconnect to the internet and try again.');
+  }
+
+  if (errorCode === 'unauthenticated') {
+    return new Error('Unable to start a secure partner session right now. Try again in a moment.');
+  }
+
+  if (errorCode === 'permission-denied') {
+    return new Error('That share link is unavailable right now. Check the code and try again.');
+  }
+
+  if (errorCode === 'not-found') {
+    return new Error('That share code is unavailable. Check the code and try again.');
+  }
+
+  return new Error(fallbackMessage);
+}
+
 export function normalizeShareCode(value: string) {
   return value.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, SHARE_CODE_LENGTH);
 }
@@ -244,7 +285,13 @@ async function ensureConfiguredSession() {
     throw new Error('Firebase has not been configured yet.');
   }
 
-  const session = await ensureAnonymousSession();
+  let session;
+
+  try {
+    session = await ensureAnonymousSession();
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to start a secure partner session right now.');
+  }
 
   if (!session) {
     throw new Error('Firebase has not been configured yet.');
@@ -264,23 +311,27 @@ export async function createPartnerShare(ownerName: string) {
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, shareCode);
   const nowIso = new Date().toISOString();
 
-  await setDoc(shareRef, {
-    shareCode,
-    ownerUid: session.user.uid,
-    partnerUid: null,
-    ownerName: ownerName.trim() || 'Love',
-    partnerName: '',
-    sharingEnabled: true,
-    locationSharingEnabled: false,
-    partnerPushToken: null,
-    partnerPushAlertsEnabled: false,
-    partnerPushUpdatedAtIso: null,
-    latestStatus: null,
-    latestCheckIn: null,
-    latestLocation: null,
-    createdAtIso: nowIso,
-    updatedAtIso: nowIso,
-  } satisfies PartnerShareDocument);
+  try {
+    await setDoc(shareRef, {
+      shareCode,
+      ownerUid: session.user.uid,
+      partnerUid: null,
+      ownerName: ownerName.trim() || 'Love',
+      partnerName: '',
+      sharingEnabled: true,
+      locationSharingEnabled: false,
+      partnerPushToken: null,
+      partnerPushAlertsEnabled: false,
+      partnerPushUpdatedAtIso: null,
+      latestStatus: null,
+      latestCheckIn: null,
+      latestLocation: null,
+      createdAtIso: nowIso,
+      updatedAtIso: nowIso,
+    } satisfies PartnerShareDocument);
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to create a share code right now.');
+  }
 
   return shareCode;
 }
@@ -302,16 +353,13 @@ export async function connectToPartnerShare(shareCode: string, partnerName: stri
       updatedAtIso: new Date().toISOString(),
     });
   } catch (caughtError) {
-    const errorCode =
-      caughtError && typeof caughtError === 'object' && 'code' in caughtError && typeof caughtError.code === 'string'
-        ? caughtError.code
-        : '';
+    const errorCode = getPartnerErrorCode(caughtError);
 
     if (errorCode === 'not-found' || errorCode === 'permission-denied') {
       throw new Error('That share code is unavailable. Check the code and try again.');
     }
 
-    throw caughtError;
+    throw createPartnerFriendlyError(caughtError, 'Unable to open partner view right now.');
   }
 
   return normalizedCode;
@@ -342,7 +390,11 @@ export async function updatePartnerSharingPreferences(options: {
     updates.latestLocation = null;
   }
 
-  await updateDoc(shareRef, updates);
+  try {
+    await updateDoc(shareRef, updates);
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to update sharing right now.');
+  }
 }
 
 export async function syncPartnerStatus(options: {
@@ -358,12 +410,16 @@ export async function syncPartnerStatus(options: {
   const session = await ensureConfiguredSession();
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(options.shareCode));
 
-  await updateDoc(shareRef, {
-    ownerName: options.ownerName.trim() || 'Love',
-    sharingEnabled: options.sharingEnabled,
-    latestStatus: options.snapshot,
-    updatedAtIso: new Date().toISOString(),
-  });
+  try {
+    await updateDoc(shareRef, {
+      ownerName: options.ownerName.trim() || 'Love',
+      sharingEnabled: options.sharingEnabled,
+      latestStatus: options.snapshot,
+      updatedAtIso: new Date().toISOString(),
+    });
+  } catch {
+    // Best-effort background sync only.
+  }
 }
 
 export async function sendPartnerQuickCheckIn(shareCode: string, message: string) {
@@ -376,13 +432,17 @@ export async function sendPartnerQuickCheckIn(shareCode: string, message: string
   const session = await ensureConfiguredSession();
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(shareCode));
 
-  await updateDoc(shareRef, {
-    latestCheckIn: {
-      message: trimmedMessage,
-      createdAtIso: new Date().toISOString(),
-    } satisfies PartnerQuickCheckIn,
-    updatedAtIso: new Date().toISOString(),
-  });
+  try {
+    await updateDoc(shareRef, {
+      latestCheckIn: {
+        message: trimmedMessage,
+        createdAtIso: new Date().toISOString(),
+      } satisfies PartnerQuickCheckIn,
+      updatedAtIso: new Date().toISOString(),
+    });
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to send the check-in right now.');
+  }
 }
 
 export async function sharePartnerLocationCheckIn(
@@ -392,19 +452,29 @@ export async function sharePartnerLocationCheckIn(
   const session = await ensureConfiguredSession();
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(shareCode));
 
-  await updateDoc(shareRef, {
-    latestLocation: {
-      ...coordinates,
-      sharedAtIso: new Date().toISOString(),
-    } satisfies PartnerLocationCheckIn,
-    updatedAtIso: new Date().toISOString(),
-  });
+  try {
+    await updateDoc(shareRef, {
+      latestLocation: {
+        ...coordinates,
+        sharedAtIso: new Date().toISOString(),
+      } satisfies PartnerLocationCheckIn,
+      updatedAtIso: new Date().toISOString(),
+    });
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to share the current location right now.');
+  }
 }
 
 export async function getPartnerShare(shareCode: string) {
   const session = await ensureConfiguredSession();
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(shareCode));
-  const snapshot = await getDoc(shareRef);
+  let snapshot;
+
+  try {
+    snapshot = await getDoc(shareRef);
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to load partner updates right now.');
+  }
 
   if (!snapshot.exists()) {
     return null;
@@ -427,11 +497,15 @@ export async function updatePartnerPushSubscription(options: {
   const session = await ensureConfiguredSession();
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
 
-  await updateDoc(shareRef, {
-    partnerPushToken: options.alertsEnabled ? options.pushToken : null,
-    partnerPushAlertsEnabled: options.alertsEnabled,
-    partnerPushUpdatedAtIso: new Date().toISOString(),
-  });
+  try {
+    await updateDoc(shareRef, {
+      partnerPushToken: options.alertsEnabled ? options.pushToken : null,
+      partnerPushAlertsEnabled: options.alertsEnabled,
+      partnerPushUpdatedAtIso: new Date().toISOString(),
+    });
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to update partner alerts right now.');
+  }
 }
 
 export async function subscribeToPartnerShare(
@@ -446,7 +520,15 @@ export async function subscribeToPartnerShare(
     return (() => {}) as Unsubscribe;
   }
 
-  const session = await ensureConfiguredSession();
+  let session;
+
+  try {
+    session = await ensureConfiguredSession();
+  } catch (caughtError) {
+    onError(createPartnerFriendlyError(caughtError, 'Unable to load partner updates.'));
+    return (() => {}) as Unsubscribe;
+  }
+
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
   let lastSerializedValue = '';
 
@@ -467,7 +549,7 @@ export async function subscribeToPartnerShare(
       const snapshot = await getDoc(shareRef);
       emitSnapshotValue(snapshot);
     } catch (error) {
-      onError(error instanceof Error ? error : new Error('Unable to refresh partner updates.'));
+      onError(createPartnerFriendlyError(error, 'Unable to refresh partner updates.'));
     }
   };
 
@@ -497,7 +579,7 @@ export async function subscribeToPartnerShare(
       emitSnapshotValue(snapshot);
     },
     (error) => {
-      onError(error instanceof Error ? error : new Error('Unable to load partner updates.'));
+      onError(createPartnerFriendlyError(error, 'Unable to load partner updates.'));
     },
   );
 
