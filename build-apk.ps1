@@ -2,7 +2,8 @@
 param(
   [switch]$SkipWebBuild,
   [switch]$SkipAndroidSync,
-  [switch]$Release
+  [switch]$Release,
+  [switch]$Bundle
 )
 
 Set-StrictMode -Version Latest
@@ -65,19 +66,27 @@ if (-not $releaseVersion) {
   throw "Unable to read the app version from '$packageJsonPath'."
 }
 
-$shareableApkName = "HerCare-v$releaseVersion.apk"
-$buildVariant = if ($Release) { 'release' } else { 'debug' }
-$gradleTask = if ($Release) { 'assembleRelease' } else { 'assembleDebug' }
-$defaultApkName = if ($Release) { 'app-release.apk' } else { 'app-debug.apk' }
-$apkPath = Join-Path $androidRoot "app\build\outputs\apk\$buildVariant\$defaultApkName"
-$shareableApkName = if ($Release) { "HerCare-v$releaseVersion-release.apk" } else { "HerCare-v$releaseVersion.apk" }
-$shareableApkPath = Join-Path $androidRoot "app\build\outputs\apk\$buildVariant\$shareableApkName"
+$isReleaseBuild = $Release -or $Bundle
+$artifactKind = if ($Bundle) { 'bundle' } else { 'apk' }
+$buildVariant = if ($isReleaseBuild) { 'release' } else { 'debug' }
+$gradleTask = if ($Bundle) { 'bundleRelease' } elseif ($Release) { 'assembleRelease' } else { 'assembleDebug' }
+$defaultArtifactName = if ($Bundle) { 'app-release.aab' } elseif ($Release) { 'app-release.apk' } else { 'app-debug.apk' }
+$artifactPath = Join-Path $androidRoot "app\build\outputs\$artifactKind\$buildVariant\$defaultArtifactName"
+$shareableArtifactName = if ($Bundle) {
+  "HerCare-v$releaseVersion-release.aab"
+} elseif ($Release) {
+  "HerCare-v$releaseVersion-release.apk"
+} else {
+  "HerCare-v$releaseVersion.apk"
+}
+$shareableArtifactPath = Join-Path $androidRoot "app\build\outputs\$artifactKind\$buildVariant\$shareableArtifactName"
+$artifactLabel = if ($Bundle) { 'release bundle' } elseif ($Release) { 'release APK' } else { 'APK' }
 
 if (-not (Test-Path $androidRoot)) {
   throw "Android project not found at '$androidRoot'. Run 'npx.cmd cap add android' first."
 }
 
-if ($Release -and -not (Test-Path $releaseSigningPropertiesPath)) {
+if ($isReleaseBuild -and -not (Test-Path $releaseSigningPropertiesPath)) {
   throw "Release signing is not configured yet. Create '$releaseSigningPropertiesPath' first."
 }
 
@@ -127,17 +136,17 @@ if (-not $SkipAndroidSync) {
 
 Invoke-CheckedCommand -FilePath '.\gradlew.bat' -Arguments @($gradleTask, '--no-daemon', '--console=plain') -WorkingDirectory $androidRoot
 
-if (-not (Test-Path $apkPath)) {
-  throw "APK build finished but '$apkPath' was not found."
+if (-not (Test-Path $artifactPath)) {
+  throw "Build finished but '$artifactPath' was not found."
 }
 
-$apk = Get-Item $apkPath
+$artifact = Get-Item $artifactPath
 
-Copy-Item $apk.FullName $shareableApkPath -Force
-$shareableApk = Get-Item $shareableApkPath
+Copy-Item $artifact.FullName $shareableArtifactPath -Force
+$shareableArtifact = Get-Item $shareableArtifactPath
 
 Write-Host ""
-Write-Host "Shareable APK ready:" -ForegroundColor Green
-Write-Host $shareableApk.FullName -ForegroundColor Green
-Write-Host "Size: $([Math]::Round($shareableApk.Length / 1MB, 2)) MB" -ForegroundColor Green
-Write-Host "Updated: $($shareableApk.LastWriteTime)" -ForegroundColor Green
+Write-Host "Shareable $artifactLabel ready:" -ForegroundColor Green
+Write-Host $shareableArtifact.FullName -ForegroundColor Green
+Write-Host "Size: $([Math]::Round($shareableArtifact.Length / 1MB, 2)) MB" -ForegroundColor Green
+Write-Host "Updated: $($shareableArtifact.LastWriteTime)" -ForegroundColor Green

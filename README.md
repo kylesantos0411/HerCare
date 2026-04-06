@@ -78,6 +78,16 @@ The shareable APK is generated at:
 
 `android/app/build/outputs/apk/release/HerCare-v1.0.0-release.apk`
 
+### 6. Build the signed Android App Bundle
+
+```bash
+npm run aab:release
+```
+
+The Play Store bundle is generated at:
+
+`android/app/build/outputs/bundle/release/HerCare-v1.0.0-release.aab`
+
 ## Firebase Notes
 
 - Partner sharing depends on Firebase being configured correctly
@@ -90,6 +100,7 @@ The shareable APK is generated at:
 - `npm run build` - run TypeScript build and Vite production build
 - `npm run apk:debug` - build the debug APK
 - `npm run apk:release` - build the signed release APK
+- `npm run aab:release` - build the signed release App Bundle
 - `npm run push:deploy` - deploy Firebase functions only
 - `npm run lint` - run ESLint
 
@@ -116,4 +127,4 @@ design/          Logo and supporting design assets
 
 ## Status
 
-This repository is the active codebase for the HerCare app and includes the latest Android-ready implementation that was used to generate the current shareable APK.
+This repository is the active codebase for the HerCare app and includes the latest Android-ready implementation used to generate the current signed release artifacts.

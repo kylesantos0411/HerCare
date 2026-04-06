@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "apk:debug": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1",
     "apk:release": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -Release",
+    "aab:release": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -Bundle",
     "push:deploy": "npx firebase-tools deploy --only functions",
     "lint": "eslint .",
     "preview": "vite preview"
