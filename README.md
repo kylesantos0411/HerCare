@@ -68,7 +68,7 @@ npm run dev
 npm run build
 ```
 
-### 5. Build the Android debug APK
+### 5. Build the Android APK
 
 ```bash
 npm run apk:debug
@@ -88,7 +88,7 @@ The shareable APK is generated at:
 
 - `npm run dev` - start the Vite dev server
 - `npm run build` - run TypeScript build and Vite production build
-- `npm run apk:debug` - build the Android debug APK
+- `npm run apk:debug` - build the shareable Android APK
 - `npm run push:deploy` - deploy Firebase functions only
 - `npm run lint` - run ESLint
 
@@ -115,4 +115,4 @@ design/          Logo and supporting design assets
 
 ## Status
 
-This repository is the active codebase for the HerCare app and includes the latest Android-ready implementation that was used to generate the current debug APK.
+This repository is the active codebase for the HerCare app and includes the latest Android-ready implementation that was used to generate the current shareable APK.
