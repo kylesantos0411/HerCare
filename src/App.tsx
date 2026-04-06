@@ -25,6 +25,7 @@ import { PartnerLink } from './pages/PartnerLink';
 import { PartnerSettings } from './pages/PartnerSettings';
 import { PartnerSharing } from './pages/PartnerSharing';
 import { PartnerView } from './pages/PartnerView';
+import { APP_VARIANT_CONFIG } from './config/appVariant';
 import { useCurrentDayKey } from './hooks/useCurrentDayKey';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { APP_VERSION } from './utils/appInfo';
@@ -81,6 +82,9 @@ type AppTab =
   | 'open_when'
   | 'partner_sharing';
 
+const SUPPORTS_PARTNER_FEATURES = APP_VARIANT_CONFIG.features.partnerConnections;
+const SHOW_SUPPORT_TAB = APP_VARIANT_CONFIG.features.personalSupportTab;
+
 function App() {
   const { dayKey, referenceDate } = useCurrentDayKey();
   const [hasCompletedSetup, setHasCompletedSetup] = useLocalStorage('hercare_setup_complete', false);
@@ -89,7 +93,7 @@ function App() {
   const [notificationsEnabled] = useLocalStorage('hercare_notifications_enabled', true);
   const [studyAlertsEnabled] = useLocalStorage('hercare_study_alerts_enabled', true);
   const [hydrationRemindersEnabled] = useLocalStorage('hercare_hydration_reminders_enabled', true);
-  const [name] = useLocalStorage('hercare_user_name', 'Love');
+  const [name] = useLocalStorage('hercare_user_name', APP_VARIANT_CONFIG.defaultUserName);
   const [partnerShareCode] = useLocalStorage('hercare_partner_share_code', '');
   const [partnerSharingEnabled] = useLocalStorage('hercare_partner_sharing_enabled', false);
   const [partnerViewerEnabled, setPartnerViewerEnabled] = useLocalStorage('hercare_partner_view_enabled', false);
@@ -118,7 +122,11 @@ function App() {
   );
   const [availableAppUpdate, setAvailableAppUpdate] = useState<AppUpdateInfo | null>(null);
   const [appState, setAppState] = useState<AppState>(
-    partnerViewerEnabled && partnerViewCode ? 'partner_dashboard' : hasCompletedSetup ? (isLoggedIn ? 'main' : 'login') : 'splash',
+    SUPPORTS_PARTNER_FEATURES && partnerViewerEnabled && partnerViewCode
+      ? 'partner_dashboard'
+      : hasCompletedSetup
+        ? (isLoggedIn ? 'main' : 'login')
+        : 'splash',
   );
   const [activeTab, setActiveTab] = useState<AppTab>('home');
   const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
@@ -131,7 +139,8 @@ function App() {
 
   useEffect(() => {
     const isPartnerFlow =
-      appState === 'partner_link' || appState === 'partner_dashboard' || appState === 'partner_settings';
+      SUPPORTS_PARTNER_FEATURES &&
+      (appState === 'partner_link' || appState === 'partner_dashboard' || appState === 'partner_settings');
     const shouldUseDarkTheme = isPartnerFlow ? partnerDarkModeEnabled : nightShiftEnabled;
 
     document.body.classList.toggle('night-shift-theme', shouldUseDarkTheme);
@@ -290,7 +299,7 @@ function App() {
   }, [appState, latestSleepLog, notificationsEnabled, sleepTargetHours]);
 
   useEffect(() => {
-    if (appState !== 'main' || !partnerSharingEnabled || !partnerShareCode) {
+    if (!SUPPORTS_PARTNER_FEATURES || appState !== 'main' || !partnerSharingEnabled || !partnerShareCode) {
       return;
     }
 
@@ -371,6 +380,10 @@ function App() {
   ]);
 
   useEffect(() => {
+    if (!SUPPORTS_PARTNER_FEATURES) {
+      return;
+    }
+
     let isCancelled = false;
 
     const clearPartnerPush = async (shareCode: string) => {
@@ -538,7 +551,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <Home onNavigate={handleTabChange} studyTimer={studyTimer} />;
+        return <Home onNavigate={handleTabChange} studyTimer={studyTimer} showPartnerTools={SUPPORTS_PARTNER_FEATURES} />;
       case 'meals':
         return <Meals onNavigate={handleTabChange} />;
       case 'wellness':
@@ -567,14 +580,17 @@ function App() {
               handleResetStudyTimer();
               setActiveTab('home');
             }}
-            onGoToYou={() => setActiveTab('you')}
+            onGoToYou={() => setActiveTab(SHOW_SUPPORT_TAB ? 'you' : 'home')}
             onOpenSettings={() => setActiveTab('settings')}
+            showSupportTab={SHOW_SUPPORT_TAB}
           />
         );
       case 'you':
-        return <You onOpenCard={openOpenWhenCard} />;
+        return SHOW_SUPPORT_TAB ? <You onOpenCard={openOpenWhenCard} /> : <Home onNavigate={handleTabChange} studyTimer={studyTimer} showPartnerTools={SUPPORTS_PARTNER_FEATURES} />;
       case 'open_when':
-        return <OpenWhenScreen cardId={selectedOpenWhenId} onBack={() => setActiveTab('you')} />;
+        return SHOW_SUPPORT_TAB
+          ? <OpenWhenScreen cardId={selectedOpenWhenId} onBack={() => setActiveTab('you')} />
+          : <Home onNavigate={handleTabChange} studyTimer={studyTimer} showPartnerTools={SUPPORTS_PARTNER_FEATURES} />;
       case 'shift':
         return (
           <ShiftDetails
@@ -590,6 +606,7 @@ function App() {
             onOpenPartnerSharing={() => setActiveTab('partner_sharing')}
             nightShiftEnabled={nightShiftEnabled}
             onNightShiftChange={setNightShiftEnabled}
+            showPartnerTools={SUPPORTS_PARTNER_FEATURES}
             onLogout={() => {
               setIsLoggedIn(false);
               setActiveTab('home');
@@ -627,16 +644,31 @@ function App() {
           />
         );
       case 'partner_sharing':
-        return <PartnerSharing onBack={() => setActiveTab('settings')} />;
+        return SUPPORTS_PARTNER_FEATURES
+          ? <PartnerSharing onBack={() => setActiveTab('settings')} />
+          : <Settings
+              onBack={() => setActiveTab('home')}
+              onOpenPartnerSharing={() => setActiveTab('settings')}
+              nightShiftEnabled={nightShiftEnabled}
+              onNightShiftChange={setNightShiftEnabled}
+              showPartnerTools={false}
+              onLogout={() => {
+                setIsLoggedIn(false);
+                setActiveTab('home');
+                setAppState('login');
+              }}
+            />;
       default:
-        return <Home onNavigate={handleTabChange} studyTimer={studyTimer} />;
+        return <Home onNavigate={handleTabChange} studyTimer={studyTimer} showPartnerTools={SUPPORTS_PARTNER_FEATURES} />;
     }
   };
 
   if (appState === 'splash') {
     return (
       <Splash
-        onComplete={() => setAppState(partnerViewerEnabled && partnerViewCode ? 'partner_dashboard' : 'welcome')}
+        onComplete={() =>
+          setAppState(SUPPORTS_PARTNER_FEATURES && partnerViewerEnabled && partnerViewCode ? 'partner_dashboard' : 'welcome')
+        }
       />
     );
   }
@@ -647,6 +679,7 @@ function App() {
         onNext={() => setAppState('setup')}
         onBack={() => setAppState('splash')}
         onPartnerView={() => setAppState(partnerViewCode ? 'partner_dashboard' : 'partner_link')}
+        showPartnerView={SUPPORTS_PARTNER_FEATURES}
       />
     );
   }
@@ -676,7 +709,7 @@ function App() {
     );
   }
 
-  if (appState === 'partner_link') {
+  if (SUPPORTS_PARTNER_FEATURES && appState === 'partner_link') {
     return (
       <div className="view-container">
         <PartnerLink
@@ -691,7 +724,7 @@ function App() {
     );
   }
 
-  if (appState === 'partner_dashboard') {
+  if (SUPPORTS_PARTNER_FEATURES && appState === 'partner_dashboard') {
     return (
       <div className="view-container">
         <PartnerView
@@ -708,7 +741,7 @@ function App() {
     );
   }
 
-  if (appState === 'partner_settings') {
+  if (SUPPORTS_PARTNER_FEATURES && appState === 'partner_settings') {
     return (
       <div className="view-container">
         <PartnerSettings
@@ -726,13 +759,14 @@ function App() {
     );
   }
 
-  const hideBottomNav = activeTab === 'shift' || activeTab === 'shift_editor' || activeTab === 'partner_sharing';
+  const hideBottomNav =
+    activeTab === 'shift' || activeTab === 'shift_editor' || (SUPPORTS_PARTNER_FEATURES && activeTab === 'partner_sharing');
 
   return (
     <>
       <div className="view-container">{renderContent()}</div>
 
-      {!hideBottomNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
+      {!hideBottomNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showSupportTab={SHOW_SUPPORT_TAB} />}
 
       {appState === 'main' && availableAppUpdate && (
         <AppUpdatePrompt

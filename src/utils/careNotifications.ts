@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications, type LocalNotificationSchema } from '@capacitor/local-notifications';
+import { APP_VARIANT_CONFIG, getVariantStorageKey } from '../config/appVariant';
 import type { MealEntry } from './meals';
 import { formatDuration, type SleepLogEntry } from './sleep';
 import type { ShiftType } from './shift';
@@ -41,7 +42,7 @@ function getStorageItem(key: string) {
     return null;
   }
 
-  return window.localStorage.getItem(key);
+  return window.localStorage.getItem(getVariantStorageKey(key));
 }
 
 function setStorageItem(key: string, value: string) {
@@ -49,7 +50,7 @@ function setStorageItem(key: string, value: string) {
     return;
   }
 
-  window.localStorage.setItem(key, value);
+  window.localStorage.setItem(getVariantStorageKey(key), value);
 }
 
 function removeStorageItem(key: string) {
@@ -57,7 +58,51 @@ function removeStorageItem(key: string) {
     return;
   }
 
-  window.localStorage.removeItem(key);
+  window.localStorage.removeItem(getVariantStorageKey(key));
+}
+
+function getHydrationReminderTitle() {
+  return APP_VARIANT_CONFIG.features.personalTone ? 'Baby, water ka muna' : 'Hydration reminder';
+}
+
+function getHydrationReminderBody(currentHydrationCount: number, waterGoal: number, isToday: boolean) {
+  if (APP_VARIANT_CONFIG.features.personalTone) {
+    return isToday
+      ? `Love, inom ka muna ha. ${currentHydrationCount} of ${waterGoal} glasses ka pa lang today. Kahit few sips muna, count pa rin yun.`
+      : 'Baby, water ka ulit tomorrow ha. Kahit few sips lang muna, okay na yun.';
+  }
+
+  return isToday
+    ? `You are at ${currentHydrationCount} of ${waterGoal} glasses today. A few sips still count.`
+    : 'A quick reminder for tomorrow: keep water nearby and take a few sips when you can.';
+}
+
+function getBreakfastReminderTitle() {
+  return APP_VARIANT_CONFIG.features.personalTone ? 'Kumain ka na ba, baby?' : 'Breakfast reminder';
+}
+
+function getBreakfastReminderBody(isToday: boolean) {
+  if (APP_VARIANT_CONFIG.features.personalTone) {
+    return isToday
+      ? 'Love, if hindi ka pa nakakapag-breakfast, kain ka muna ha. Kahit something small lang, basta may laman tiyan mo.'
+      : 'Reminder for tomorrow, baby: wag mo i-skip breakfast ha. Kahit light lang, okay na yun.';
+  }
+
+  return isToday
+    ? 'If you have not eaten breakfast yet, try something small and steady when you can.'
+    : 'Reminder for tomorrow: even a light breakfast can make the day feel steadier.';
+}
+
+function getLowSleepAlertTitle() {
+  return APP_VARIANT_CONFIG.features.personalTone ? 'Baby, kulang tulog mo' : 'Low sleep reminder';
+}
+
+function getLowSleepAlertBody(durationMinutes: number) {
+  if (APP_VARIANT_CONFIG.features.personalTone) {
+    return `You only got ${formatDuration(durationMinutes)} of sleep, love. Please go extra gentle today and rest when you can.`;
+  }
+
+  return `You logged ${formatDuration(durationMinutes)} of sleep. Go easy today and rest when you can.`;
 }
 
 async function ensureNotificationAccess() {
@@ -197,11 +242,8 @@ function buildHydrationNotifications(
 
       notifications.push({
         id: 1000 + dayOffset * reminderTimes.length + index,
-        title: 'Baby, water ka muna',
-        body:
-          dayOffset === 0
-            ? `Love, inom ka muna ha. ${currentHydrationCount} of ${waterGoal} glasses ka pa lang today. Kahit few sips muna, count pa rin yun.`
-            : `Baby, water ka ulit tomorrow ha. Kahit few sips lang muna, okay na yun.`,
+        title: getHydrationReminderTitle(),
+        body: getHydrationReminderBody(currentHydrationCount, waterGoal, dayOffset === 0),
         schedule: {
           at: reminderDate,
           allowWhileIdle: true,
@@ -232,11 +274,8 @@ function buildBreakfastNotifications(mealEntries: MealEntry[], referenceDate: Da
 
     notifications.push({
       id: 1025 + dayOffset,
-      title: 'Kumain ka na ba, baby?',
-      body:
-        dayOffset === 0
-          ? "Love, if hindi ka pa nakakapag-breakfast, kain ka muna ha. Kahit something small lang, basta may laman tiyan mo."
-          : "Reminder for tomorrow, baby: wag mo i-skip breakfast ha. Kahit light lang, okay na yun.",
+      title: getBreakfastReminderTitle(),
+      body: getBreakfastReminderBody(dayOffset === 0),
       schedule: {
         at: reminderDate,
         allowWhileIdle: true,
@@ -327,8 +366,8 @@ export async function syncLowSleepAlert(options: SyncSleepAlertOptions) {
     notifications: [
       {
         id: LOW_SLEEP_ALERT_ID,
-        title: 'Baby, kulang tulog mo',
-        body: `You only got ${formatDuration(latestSleepLog.durationMinutes)} of sleep, love. Please go extra gentle today and rest when you can.`,
+        title: getLowSleepAlertTitle(),
+        body: getLowSleepAlertBody(latestSleepLog.durationMinutes),
         schedule: {
           at: alertDate,
           allowWhileIdle: true,

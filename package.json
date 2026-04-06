@@ -5,10 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:simple": "powershell -Command \"$env:VITE_APP_VARIANT='simple'; npm.cmd run dev\"",
     "build": "tsc -b && vite build",
+    "build:simple": "powershell -Command \"$env:VITE_APP_VARIANT='simple'; npm.cmd run build\"",
     "apk:debug": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1",
+    "apk:simple:debug": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -AppVariant simple",
     "apk:release": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -Release",
+    "apk:simple:release": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -Release -AppVariant simple",
     "aab:release": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -Bundle",
+    "aab:simple:release": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1 -Bundle -AppVariant simple",
     "push:deploy": "npx firebase-tools deploy --only functions",
     "lint": "eslint .",
     "preview": "vite preview"

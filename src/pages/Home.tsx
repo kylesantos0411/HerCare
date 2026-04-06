@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { APP_VARIANT_CONFIG } from '../config/appVariant';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useCurrentDayKey } from '../hooks/useCurrentDayKey';
 import { getCurrentDeviceLocation } from '../utils/deviceLocation';
@@ -53,6 +54,7 @@ import './Home.css';
 interface HomeProps {
   onNavigate: (view: string) => void;
   studyTimer: StudyTimerState;
+  showPartnerTools: boolean;
 }
 
 const QUICK_CHECK_IN_PRESETS = [
@@ -64,13 +66,14 @@ const QUICK_CHECK_IN_PRESETS = [
 
 function getTimeBasedGreeting(date: Date) {
   const hour = date.getHours();
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
 
   if (hour >= 5 && hour < 12) {
-    return 'Good morning, baby. Kumain ka na?';
+    return personalTone ? 'Good morning, baby. Kumain ka na?' : 'Good morning. Ready to check in?';
   }
 
   if (hour >= 20 || hour < 5) {
-    return 'Rest ka na, love.';
+    return personalTone ? 'Rest ka na, love.' : 'Time to wind down and reset.';
   }
 
   return 'Ready for your shift?';
@@ -83,30 +86,44 @@ function getInsightMessage(
   latestSleepLog: SleepLogEntry | null,
   sleepTargetHours: number,
 ) {
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
+
   if (glasses < 4) {
-    return 'Insight: You were a bit behind on water yesterday. Try to grab a sip before 2 AM!';
+    return personalTone
+      ? 'Insight: You were a bit behind on water yesterday. Try to grab a sip before 2 AM!'
+      : 'Insight: Hydration has been a little low. A few sips before the next busy stretch could help.';
   }
 
   if (
     latestSleepLog &&
     (isSleepBelowTarget(latestSleepLog, sleepTargetHours) || latestSleepLog.quality === 'poor')
   ) {
-    return 'Insight: Your latest sleep log came in a little short. Protect a slower reset after shift if you can.';
+    return personalTone
+      ? 'Insight: Your latest sleep log came in a little short. Protect a slower reset after shift if you can.'
+      : 'Insight: Your latest sleep log came in a little short. Try to protect a gentler reset after shift if you can.';
   }
 
   if (latestMoodEntry && latestMoodEntry.stressLevel >= 4) {
-    return 'Insight: Your latest mood check showed high stress. Try to claim one quiet reset moment during shift.';
+    return personalTone
+      ? 'Insight: Your latest mood check showed high stress. Try to claim one quiet reset moment during shift.'
+      : 'Insight: Your latest mood check showed high stress. One quiet reset moment could help during the shift.';
   }
 
   if (latestMoodEntry && latestMoodEntry.energyLevel <= 2) {
-    return 'Insight: Your energy looked low in the last check-in. A snack, water, and a short pause could help.';
+    return personalTone
+      ? 'Insight: Your energy looked low in the last check-in. A snack, water, and a short pause could help.'
+      : 'Insight: Your energy looked low in the last check-in. A snack, water, and a short pause could help.';
   }
 
   if (currentMood === 'tired') {
-    return 'Insight: You logged feeling tired recently. Be gentle with yourself tonight.';
+    return personalTone
+      ? 'Insight: You logged feeling tired recently. Be gentle with yourself tonight.'
+      : 'Insight: You logged feeling tired recently. Keep the pace gentle tonight.';
   }
 
-  return "Insight: You're on a great streak! Keep up the amazing work tonight.";
+  return personalTone
+    ? "Insight: You're on a great streak! Keep up the amazing work tonight."
+    : "Insight: You're on a solid rhythm right now. Keep building on what's working.";
 }
 
 function formatFocusStatus(studyTimer: StudyTimerState) {
@@ -128,29 +145,35 @@ function formatFocusStatus(studyTimer: StudyTimerState) {
 }
 
 function getFocusHelperCopy(studyTimer: StudyTimerState) {
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
+
   if (studyTimer.status === 'running') {
-    return 'SUPER GALING BABY, GO GO GO!';
+    return personalTone ? 'SUPER GALING BABY, GO GO GO!' : 'Focus is in progress. Keep going one step at a time.';
   }
 
   if (studyTimer.status === 'paused') {
-    return 'Okay lang mag-pause. Balik ka lang when ready ka ulit.';
+    return personalTone
+      ? 'Okay lang mag-pause. Balik ka lang when ready ka ulit.'
+      : 'A short pause is okay. Jump back in when you are ready.';
   }
 
   if (studyTimer.status === 'completed') {
-    return 'Good job, baby. Enough na yan for today.';
+    return personalTone ? 'Good job, baby. Enough na yan for today.' : 'Nice work. That session counts.';
   }
 
   if (!isStudyPresetMinutes(studyTimer.selectedMinutes)) {
     return 'Custom focus window ready for today.';
   }
 
-  return `${getStudyPresetDescription(studyTimer.selectedMinutes)} for duty breaks, low energy, or rest days.`;
+  return personalTone
+    ? `${getStudyPresetDescription(studyTimer.selectedMinutes)} for duty breaks, low energy, or rest days.`
+    : `${getStudyPresetDescription(studyTimer.selectedMinutes)} for busy days, low energy windows, or quick resets.`;
 }
 
-export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer }) => {
+export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerTools }) => {
   const { referenceDate } = useCurrentDayKey();
   const [currentTime, setCurrentTime] = useState(() => new Date());
-  const [name] = useLocalStorage('hercare_user_name', 'Sarah');
+  const [name] = useLocalStorage('hercare_user_name', APP_VARIANT_CONFIG.defaultUserName);
   const [partnerShareCode] = useLocalStorage('hercare_partner_share_code', '');
   const [partnerSharingEnabled] = useLocalStorage('hercare_partner_sharing_enabled', false);
   const [partnerLocationEnabled] = useLocalStorage('hercare_partner_location_enabled', false);
@@ -192,6 +215,8 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer }) => {
   );
   const focusProgress = studyTimer.status === 'completed' ? 100 : getStudyProgress(studyTimer) * 100;
   const focusActionLabel = studyTimer.status === 'running' ? 'Return to Timer' : 'Open Study';
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
+  const greetingName = name.trim();
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -275,7 +300,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer }) => {
     <div className="home-container">
       <header className="home-header">
         <div className="greeting">
-          <h1>Hi, {name || 'Love'}!</h1>
+          <h1>{greetingName ? `Hi, ${greetingName}!` : 'Hi there!'}</h1>
           <p className="subtitle">{timeBasedGreeting}</p>
         </div>
         <div className="header-actions">
@@ -345,74 +370,76 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer }) => {
         </Card>
       </div>
 
-      <section className="partner-quick-section">
-        <Card className="partner-quick-card">
-          <div className="partner-quick-header">
-            <div className="partner-quick-copy">
-              <HeartHandshake size={18} />
-              <div>
-                <h3>Quick Partner Check-In</h3>
-                {!partnerSharingEnabled || !partnerShareCode ? (
-                  <p>Turn on Partner Sharing in Settings first.</p>
-                ) : null}
+      {showPartnerTools && (
+        <section className="partner-quick-section">
+          <Card className="partner-quick-card">
+            <div className="partner-quick-header">
+              <div className="partner-quick-copy">
+                <HeartHandshake size={18} />
+                <div>
+                  <h3>Quick Partner Check-In</h3>
+                  {!partnerSharingEnabled || !partnerShareCode ? (
+                    <p>Turn on Partner Sharing in Settings first.</p>
+                  ) : null}
+                </div>
               </div>
+              <button className="partner-quick-settings-link" onClick={() => onNavigate('settings')}>
+                Open
+              </button>
             </div>
-            <button className="partner-quick-settings-link" onClick={() => onNavigate('settings')}>
-              Open
-            </button>
-          </div>
 
-          <div className="partner-quick-presets">
-            {QUICK_CHECK_IN_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                className="partner-quick-preset-btn"
-                onClick={() => void handleSendQuickCheckIn(preset)}
+            <div className="partner-quick-presets">
+              {QUICK_CHECK_IN_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className="partner-quick-preset-btn"
+                  onClick={() => void handleSendQuickCheckIn(preset)}
+                  disabled={!partnerShareCode || !partnerSharingEnabled || busyAction !== null}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              className="partner-quick-textarea"
+              value={quickCheckInMessage}
+              onChange={(event) => setQuickCheckInMessage(event.target.value)}
+              placeholder="Baby, medyo pagod but okay pa naman."
+              rows={3}
+            />
+
+            <div className="partner-quick-actions">
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => void handleSendQuickCheckIn()}
                 disabled={!partnerShareCode || !partnerSharingEnabled || busyAction !== null}
               >
-                {preset}
-              </button>
-            ))}
-          </div>
+                <Send size={16} />
+                {busyAction === 'checkin' ? 'Sending...' : 'Send Check-In'}
+              </Button>
 
-          <textarea
-            className="partner-quick-textarea"
-            value={quickCheckInMessage}
-            onChange={(event) => setQuickCheckInMessage(event.target.value)}
-            placeholder="Baby, medyo pagod but okay pa naman."
-            rows={3}
-          />
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={() => void handleSharePartnerLocation()}
+                disabled={!partnerShareCode || !partnerSharingEnabled || busyAction !== null}
+              >
+                <MapPinned size={16} />
+                {busyAction === 'location' ? 'Sharing...' : 'Share Location'}
+              </Button>
+            </div>
 
-          <div className="partner-quick-actions">
-            <Button
-              variant="secondary"
-              fullWidth
-              onClick={() => void handleSendQuickCheckIn()}
-              disabled={!partnerShareCode || !partnerSharingEnabled || busyAction !== null}
-            >
-              <Send size={16} />
-              {busyAction === 'checkin' ? 'Sending...' : 'Send Check-In'}
-            </Button>
-
-            <Button
-              variant="outline"
-              fullWidth
-              onClick={() => void handleSharePartnerLocation()}
-              disabled={!partnerShareCode || !partnerSharingEnabled || busyAction !== null}
-            >
-              <MapPinned size={16} />
-              {busyAction === 'location' ? 'Sharing...' : 'Share Location'}
-            </Button>
-          </div>
-
-          {(quickCheckInStatus || quickCheckInError) && (
-            <p className={`partner-quick-feedback ${quickCheckInError ? 'error' : 'success'}`}>
-              {quickCheckInError || quickCheckInStatus}
-            </p>
-          )}
-        </Card>
-      </section>
+            {(quickCheckInStatus || quickCheckInError) && (
+              <p className={`partner-quick-feedback ${quickCheckInError ? 'error' : 'success'}`}>
+                {quickCheckInError || quickCheckInStatus}
+              </p>
+            )}
+          </Card>
+        </section>
+      )}
 
       <section className="quick-focus-section">
         <Card className={`quick-focus-card status-${studyTimer.status}`}>
@@ -423,7 +450,11 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer }) => {
                 <p className="quick-focus-kicker">Quick Focus</p>
               </div>
               <h3>Flexible Pomodoro</h3>
-              <p className="quick-focus-description">Kahit few minutes lang, count pa rin, baby. Small study wins still matter.</p>
+              <p className="quick-focus-description">
+                {personalTone
+                  ? 'Kahit few minutes lang, count pa rin, baby. Small study wins still matter.'
+                  : 'Even a short session counts. Small focus wins still matter.'}
+              </p>
             </div>
 
             <div className="quick-focus-badge">{getStudyPresetLabel(studyTimer.selectedMinutes)}</div>

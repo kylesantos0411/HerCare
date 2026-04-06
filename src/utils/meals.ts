@@ -1,3 +1,5 @@
+import { getVariantStorageKey } from '../config/appVariant';
+
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 export type MealStatus = 'planned' | 'packed' | 'eaten' | 'skipped';
 
@@ -69,11 +71,13 @@ function safeParseJson<T>(key: string, fallback: T): T {
     return fallback;
   }
 
+  const storageKey = getVariantStorageKey(key);
+
   try {
-    const item = window.localStorage.getItem(key);
+    const item = window.localStorage.getItem(storageKey);
     return item ? (JSON.parse(item) as T) : fallback;
   } catch (error) {
-    console.warn(`Error reading localStorage key "${key}":`, error);
+    console.warn(`Error reading localStorage key "${storageKey}":`, error);
     return fallback;
   }
 }

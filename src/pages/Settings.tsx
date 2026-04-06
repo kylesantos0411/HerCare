@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { APP_VERSION } from '../utils/appInfo';
+import { APP_NAME, APP_VERSION } from '../utils/appInfo';
 import type { ShiftType } from '../utils/shift';
 import './Settings.css';
 
@@ -21,6 +21,7 @@ interface SettingsProps {
   nightShiftEnabled: boolean;
   onNightShiftChange: (enabled: boolean) => void;
   onLogout: () => void;
+  showPartnerTools: boolean;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -29,6 +30,7 @@ export const Settings: React.FC<SettingsProps> = ({
   nightShiftEnabled,
   onNightShiftChange,
   onLogout,
+  showPartnerTools,
 }) => {
   const [name] = useLocalStorage('hercare_user_name', '');
   const [shiftPreference, setShiftPreference] = useLocalStorage<ShiftType>('hercare_shift_preference', 'Night Duty');
@@ -159,26 +161,28 @@ export const Settings: React.FC<SettingsProps> = ({
         </Card>
       </section>
 
-      <section className="settings-section">
-        <h3>Partner</h3>
-        <Card className="settings-card">
-          <button className="settings-link-item" onClick={onOpenPartnerSharing}>
-            <div className="settings-icon-name">
-              <div className="icon-wrapper variant-primary">
-                <Link2 size={20} />
+      {showPartnerTools && (
+        <section className="settings-section">
+          <h3>Partner</h3>
+          <Card className="settings-card">
+            <button className="settings-link-item" onClick={onOpenPartnerSharing}>
+              <div className="settings-icon-name">
+                <div className="icon-wrapper variant-primary">
+                  <Link2 size={20} />
+                </div>
+                <span>Partner Sharing</span>
               </div>
-              <span>Partner Sharing</span>
-            </div>
-            <span className="settings-action">Open</span>
-          </button>
-        </Card>
-      </section>
+              <span className="settings-action">Open</span>
+            </button>
+          </Card>
+        </section>
+      )}
 
       <div className="settings-footer">
         <button className="logout-btn" onClick={onLogout}>
           Log Out
         </button>
-        <p className="app-version">HerCare Version {APP_VERSION}</p>
+        <p className="app-version">{APP_NAME} Version {APP_VERSION}</p>
       </div>
     </div>
   );

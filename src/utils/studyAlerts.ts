@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { APP_VARIANT_CONFIG } from '../config/appVariant';
 import type { StudyTimerState } from './study';
 
 const STUDY_ALERT_CHANNEL_ID = 'hercare-study-alerts-soft-v1';
@@ -7,6 +8,12 @@ const STUDY_ALERT_ID = 4100;
 const STUDY_ALERT_SOUND = 'study_bell_soft.wav';
 
 let studyAudioContext: AudioContext | null = null;
+
+function getStudyCompletionAlertBody() {
+  return APP_VARIANT_CONFIG.features.personalTone
+    ? 'Good job, baby. Enough na yan for today. Water muna or short break ka lang.'
+    : 'Nice work. Your focus block is complete. Take a short water or stretch break.';
+}
 
 function isLocalNotificationsAvailable() {
   return Capacitor.getPlatform() !== 'web';
@@ -186,7 +193,7 @@ export async function syncStudyCompletionAlert({
       {
         id: STUDY_ALERT_ID,
         title: 'Focus Time complete',
-        body: 'Good job, baby. Enough na yan for today. Water muna or short break ka lang.',
+        body: getStudyCompletionAlertBody(),
         schedule: {
           at: endTime,
           allowWhileIdle: true,

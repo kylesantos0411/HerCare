@@ -6,17 +6,21 @@ import './BottomNav.css';
 interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  showSupportTab?: boolean;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, showSupportTab = true }) => {
   const tabs = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'meals', icon: Coffee, label: 'Meals' },
     { id: 'wellness', icon: Heart, label: 'Wellness' },
     { id: 'notes', icon: Book, label: 'Notes' },
     { id: 'study', icon: AlarmClock, label: 'Study' },
-    { id: 'you', icon: User, label: 'You' },
   ];
+
+  if (showSupportTab) {
+    tabs.push({ id: 'you', icon: User, label: 'You' });
+  }
 
   return (
     <div className="bottom-nav-container">

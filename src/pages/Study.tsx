@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BellRing, CirclePause, Play, RotateCcw, Settings, Sparkles } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { APP_VARIANT_CONFIG } from '../config/appVariant';
 import {
   STUDY_MINUTES_MAX,
   STUDY_MINUTES_MIN,
@@ -28,6 +29,7 @@ interface StudyProps {
   onTakeBreak: () => void;
   onGoToYou: () => void;
   onOpenSettings: () => void;
+  showSupportTab: boolean;
 }
 
 const RING_RADIUS = 42;
@@ -51,8 +53,10 @@ function parseCustomMinutes(value: string) {
 }
 
 function getStudyStateLabel(timer: StudyTimerState) {
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
+
   if (timer.status === 'running') {
-    return 'Kaya mo yan baby!';
+    return personalTone ? 'Kaya mo yan baby!' : 'Focus in progress';
   }
 
   if (timer.status === 'paused') {
@@ -60,26 +64,32 @@ function getStudyStateLabel(timer: StudyTimerState) {
   }
 
   if (timer.status === 'completed') {
-    return 'Tapos na, baby';
+    return personalTone ? 'Tapos na, baby' : 'Session complete';
   }
 
-  return 'Goodluck Guppy!';
+  return personalTone ? 'Goodluck Guppy!' : 'Ready when you are';
 }
 
 function getStudySupportCopy(timer: StudyTimerState) {
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
+
   if (timer.status === 'running') {
-    return 'Dahan-dahan lang, take your time baby';
+    return personalTone ? 'Dahan-dahan lang, take your time baby' : 'Stay steady. One small block at a time.';
   }
 
   if (timer.status === 'paused') {
-    return 'Okay lang mag-pause. Balik ka lang when nakapag small break ka na.';
+    return personalTone
+      ? 'Okay lang mag-pause. Balik ka lang when nakapag small break ka na.'
+      : 'A short pause is okay. Come back when you are ready.';
   }
 
   if (timer.status === 'completed') {
-    return 'Good job, baby. Kahit maliit lang, proud ako sa iyo.';
+    return personalTone ? 'Good job, baby. Kahit maliit lang, proud ako sa iyo.' : 'Nice work. Even a short round counts.';
   }
 
-  return 'Choose the time na kaya mo lang today. Hindi need perfect baby.';
+  return personalTone
+    ? 'Choose the time na kaya mo lang today. Hindi need perfect baby.'
+    : 'Choose a focus block that feels realistic today. It does not need to be perfect.';
 }
 
 export const Study: React.FC<StudyProps> = ({
@@ -94,8 +104,11 @@ export const Study: React.FC<StudyProps> = ({
   onTakeBreak,
   onGoToYou,
   onOpenSettings,
+  showSupportTab,
 }) => {
-  const [customMinutesInput, setCustomMinutesInput] = useState(CUSTOM_MINUTES_DEFAULT);
+  const [customMinutesInput, setCustomMinutesInput] = useState(() =>
+    isStudyPresetMinutes(timer.selectedMinutes) ? CUSTOM_MINUTES_DEFAULT : String(timer.selectedMinutes),
+  );
   const progress = timer.status === 'completed' ? 1 : getStudyProgress(timer);
   const strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
   const orbitAngle = progress * 360 - 90;
@@ -106,12 +119,7 @@ export const Study: React.FC<StudyProps> = ({
   const parsedCustomMinutes = parseCustomMinutes(customMinutesInput);
   const canApplyCustomMinutes =
     timer.status !== 'running' && parsedCustomMinutes !== null && parsedCustomMinutes !== timer.selectedMinutes;
-
-  useEffect(() => {
-    if (customSelectionActive) {
-      setCustomMinutesInput(String(timer.selectedMinutes));
-    }
-  }, [customSelectionActive, timer.selectedMinutes]);
+  const personalTone = APP_VARIANT_CONFIG.features.personalTone;
 
   const handleCustomTimeSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -128,7 +136,9 @@ export const Study: React.FC<StudyProps> = ({
       <header className="page-header study-header">
         <p className="study-kicker">Flexible Pomodoro</p>
         <h1>Focus Time</h1>
-        <p className="subtitle">Kahit few minutes lang, enough na yun baby.</p>
+        <p className="subtitle">
+          {personalTone ? 'Kahit few minutes lang, enough na yun baby.' : 'Even a few minutes of focus still counts.'}
+        </p>
       </header>
 
       <Card className={`study-timer-card status-${timer.status}`}>
@@ -242,7 +252,9 @@ export const Study: React.FC<StudyProps> = ({
             </div>
             <p>
               {notificationsEnabled && studyAlertsEnabled
-                ? "Pag time na, may soft sound at little nudge para di mo kailangan bantayan palagi."
+                ? personalTone
+                  ? 'Pag time na, may soft sound at little nudge para di mo kailangan bantayan palagi.'
+                  : 'When time is up, you will get a soft sound and gentle nudge so you do not have to keep watching the clock.'
                 : 'Turn on Notifications and Study timer alerts in Settings if you want a soft reminder when time is up.'}
             </p>
           </div>
@@ -290,8 +302,14 @@ export const Study: React.FC<StudyProps> = ({
 
           <Card className="study-complete-modal">
             <p className="study-complete-kicker">You did it</p>
-            <h3 id="study-complete-title">Good job, baby. Enough na yan for today.</h3>
-            <p className="study-complete-copy">Break muna? Water ka muna, then rest your mind a little.</p>
+            <h3 id="study-complete-title">
+              {personalTone ? 'Good job, baby. Enough na yan for today.' : 'Nice work. That focus block is done.'}
+            </h3>
+            <p className="study-complete-copy">
+              {personalTone
+                ? 'Break muna? Water ka muna, then rest your mind a little.'
+                : 'Take a short break, get some water, and give your mind a reset.'}
+            </p>
 
             <div className="study-complete-actions">
               <Button variant="primary" fullWidth onClick={onStartAnotherSession}>
@@ -301,7 +319,7 @@ export const Study: React.FC<StudyProps> = ({
                 Break Muna
               </Button>
               <Button variant="outline" fullWidth onClick={onGoToYou}>
-                Go to You
+                {showSupportTab ? 'Go to You' : 'Go Home'}
               </Button>
             </div>
           </Card>

@@ -3,7 +3,7 @@ import { Download, Sparkles } from 'lucide-react';
 import { Button } from './Button';
 import { Card } from './Card';
 import type { AppUpdateInfo } from '../utils/appUpdate';
-import { APP_VERSION } from '../utils/appInfo';
+import { APP_NAME, APP_VERSION } from '../utils/appInfo';
 import './AppUpdatePrompt.css';
 
 interface AppUpdatePromptProps {
@@ -23,9 +23,9 @@ export const AppUpdatePrompt: React.FC<AppUpdatePromptProps> = ({ update, onLate
           Update ready
         </div>
 
-        <h3 id="app-update-title">A newer HerCare build is available.</h3>
+        <h3 id="app-update-title">A newer {APP_NAME} build is available.</h3>
         <p className="app-update-copy">
-          Version {update.version} is ready on GitHub. You’re currently on {APP_VERSION}.
+          Version {update.version} is ready on GitHub. You're currently on {APP_VERSION}.
         </p>
 
         <div className="app-update-meta">

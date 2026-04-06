@@ -3,6 +3,7 @@ import { KeyRound, LockKeyhole, Stethoscope } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { APP_NAME } from '../utils/appInfo';
 import './Login.css';
 
 interface LoginProps {
@@ -32,7 +33,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onCreateAccount }) => {
           <Stethoscope size={44} />
         </div>
         <h1>Welcome back</h1>
-        <p>Use your saved local profile name to get back into HerCare.</p>
+        <p>Use your saved local profile name to get back into {APP_NAME}.</p>
       </div>
 
       <Card className="login-card">

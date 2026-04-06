@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { getVariantStorageKey } from '../config/appVariant';
 
 const LOCAL_STORAGE_EVENT = 'hercare-local-storage';
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
+  const storageKey = getVariantStorageKey(key);
+
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -11,12 +14,12 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
     try {
       // Get from local storage by key
-      const item = window.localStorage.getItem(key);
+      const item = window.localStorage.getItem(storageKey);
       // Parse stored json or if none return initialValue
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       // If error also return initialValue
-      console.warn(`Error reading localStorage key "${key}":`, error);
+      console.warn(`Error reading localStorage key "${storageKey}":`, error);
       return initialValue;
     }
   });
@@ -32,7 +35,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key !== key) {
+      if (event.key !== storageKey) {
         return;
       }
 
@@ -41,14 +44,14 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         valueRef.current = nextValue;
         setStoredValue(nextValue);
       } catch (error) {
-        console.warn(`Error syncing localStorage key "${key}":`, error);
+        console.warn(`Error syncing localStorage key "${storageKey}":`, error);
       }
     };
 
     const handleLocalEvent = (event: Event) => {
       const customEvent = event as CustomEvent<{ key: string; value: T }>;
 
-      if (!customEvent.detail || customEvent.detail.key !== key) {
+      if (!customEvent.detail || customEvent.detail.key !== storageKey) {
         return;
       }
 
@@ -63,7 +66,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener(LOCAL_STORAGE_EVENT, handleLocalEvent as EventListener);
     };
-  }, [initialValue, key]);
+  }, [initialValue, storageKey]);
 
   // Return a wrapped version of useState's setter function that ...
   // ... persists the new value to localStorage.
@@ -76,18 +79,18 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       setStoredValue(valueToStore);
 
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        window.localStorage.setItem(storageKey, JSON.stringify(valueToStore));
         window.dispatchEvent(
           new CustomEvent(LOCAL_STORAGE_EVENT, {
             detail: {
-              key,
+              key: storageKey,
               value: valueToStore,
             },
           }),
         );
       }
     } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error);
+      console.warn(`Error setting localStorage key "${storageKey}":`, error);
     }
   };
 

@@ -48,6 +48,7 @@ const PARTNER_SHARE_COLLECTION = 'partnerShares';
 const SHARE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const SHARE_CODE_LENGTH = 8;
 const PARTNER_POLL_INTERVAL_MS = 4000;
+const CREATE_PARTNER_SHARE_ATTEMPTS = 6;
 
 export interface PartnerStudyStatusSnapshot {
   status: StudyTimerStatus;
@@ -173,10 +174,6 @@ function createPartnerFriendlyError(error: unknown, fallbackMessage: string) {
 
   if (errorCode === 'unauthenticated') {
     return new Error('Unable to start a secure partner session right now. Try again in a moment.');
-  }
-
-  if (errorCode === 'permission-denied') {
-    return new Error('That share link is unavailable right now. Check the code and try again.');
   }
 
   if (errorCode === 'not-found') {
@@ -306,34 +303,45 @@ async function ensureConfiguredSession() {
 
 export async function createPartnerShare(ownerName: string) {
   const session = await ensureConfiguredSession();
-
-  const shareCode = createShareCode();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, shareCode);
   const nowIso = new Date().toISOString();
 
-  try {
-    await setDoc(shareRef, {
-      shareCode,
-      ownerUid: session.user.uid,
-      partnerUid: null,
-      ownerName: ownerName.trim() || 'Love',
-      partnerName: '',
-      sharingEnabled: true,
-      locationSharingEnabled: false,
-      partnerPushToken: null,
-      partnerPushAlertsEnabled: false,
-      partnerPushUpdatedAtIso: null,
-      latestStatus: null,
-      latestCheckIn: null,
-      latestLocation: null,
-      createdAtIso: nowIso,
-      updatedAtIso: nowIso,
-    } satisfies PartnerShareDocument);
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to create a share code right now.');
+  for (let attempt = 0; attempt < CREATE_PARTNER_SHARE_ATTEMPTS; attempt += 1) {
+    const shareCode = createShareCode();
+    const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, shareCode);
+
+    try {
+      await setDoc(shareRef, {
+        shareCode,
+        ownerUid: session.user.uid,
+        partnerUid: null,
+        ownerName: ownerName.trim() || 'Love',
+        partnerName: '',
+        sharingEnabled: true,
+        locationSharingEnabled: false,
+        partnerPushToken: null,
+        partnerPushAlertsEnabled: false,
+        partnerPushUpdatedAtIso: null,
+        latestStatus: null,
+        latestCheckIn: null,
+        latestLocation: null,
+        createdAtIso: nowIso,
+        updatedAtIso: nowIso,
+      } satisfies PartnerShareDocument);
+
+      return shareCode;
+    } catch (caughtError) {
+      const errorCode = getPartnerErrorCode(caughtError).toLowerCase();
+
+      // A permission-denied on create usually means the random short code already exists.
+      if (errorCode === 'permission-denied' && attempt < CREATE_PARTNER_SHARE_ATTEMPTS - 1) {
+        continue;
+      }
+
+      throw createPartnerFriendlyError(caughtError, 'Unable to create a share code right now.');
+    }
   }
 
-  return shareCode;
+  throw new Error('Unable to create a fresh share code right now. Please try again.');
 }
 
 export async function connectToPartnerShare(shareCode: string, partnerName: string) {

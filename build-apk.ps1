@@ -3,7 +3,9 @@ param(
   [switch]$SkipWebBuild,
   [switch]$SkipAndroidSync,
   [switch]$Release,
-  [switch]$Bundle
+  [switch]$Bundle,
+  [ValidateSet('personal', 'simple')]
+  [string]$AppVariant = 'personal'
 )
 
 Set-StrictMode -Version Latest
@@ -61,6 +63,10 @@ if (-not (Test-Path $packageJsonPath)) {
 
 $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
 $releaseVersion = $packageJson.version
+$normalizedAppVariant = $AppVariant.ToLowerInvariant()
+$appDisplayName = if ($normalizedAppVariant -eq 'simple') { 'HerCare Essentials' } else { 'HerCare' }
+$appArtifactPrefix = if ($normalizedAppVariant -eq 'simple') { 'HerCare-Essentials' } else { 'HerCare' }
+$appId = if ($normalizedAppVariant -eq 'simple') { 'com.hercare.essentials' } else { 'com.hercare.app' }
 
 if (-not $releaseVersion) {
   throw "Unable to read the app version from '$packageJsonPath'."
@@ -73,11 +79,11 @@ $gradleTask = if ($Bundle) { 'bundleRelease' } elseif ($Release) { 'assembleRele
 $defaultArtifactName = if ($Bundle) { 'app-release.aab' } elseif ($Release) { 'app-release.apk' } else { 'app-debug.apk' }
 $artifactPath = Join-Path $androidRoot "app\build\outputs\$artifactKind\$buildVariant\$defaultArtifactName"
 $shareableArtifactName = if ($Bundle) {
-  "HerCare-v$releaseVersion-release.aab"
+  "$appArtifactPrefix-v$releaseVersion-release.aab"
 } elseif ($Release) {
-  "HerCare-v$releaseVersion-release.apk"
+  "$appArtifactPrefix-v$releaseVersion-release.apk"
 } else {
-  "HerCare-v$releaseVersion.apk"
+  "$appArtifactPrefix-v$releaseVersion.apk"
 }
 $shareableArtifactPath = Join-Path $androidRoot "app\build\outputs\$artifactKind\$buildVariant\$shareableArtifactName"
 $artifactLabel = if ($Bundle) { 'release bundle' } elseif ($Release) { 'release APK' } else { 'APK' }
@@ -114,6 +120,9 @@ $env:JAVA_HOME = $javaHome
 $env:ANDROID_HOME = $androidSdkRoot
 $env:ANDROID_SDK_ROOT = $androidSdkRoot
 $env:GRADLE_USER_HOME = $gradleCache
+$env:VITE_APP_VARIANT = $normalizedAppVariant
+$env:HERCARE_APP_VARIANT = $normalizedAppVariant
+$env:HERCARE_APPLICATION_ID = $appId
 
 $pathParts = @(
   (Join-Path $env:JAVA_HOME 'bin'),
@@ -125,6 +134,8 @@ $env:Path = ($pathParts -join ';')
 
 Write-Host "Using JAVA_HOME: $env:JAVA_HOME" -ForegroundColor DarkGray
 Write-Host "Using ANDROID_SDK_ROOT: $env:ANDROID_SDK_ROOT" -ForegroundColor DarkGray
+Write-Host "Building variant: $appDisplayName ($normalizedAppVariant)" -ForegroundColor DarkGray
+Write-Host "Using applicationId: $appId" -ForegroundColor DarkGray
 
 if (-not $SkipWebBuild) {
   Invoke-CheckedCommand -FilePath 'npm.cmd' -Arguments @('run', 'build') -WorkingDirectory $projectRoot
