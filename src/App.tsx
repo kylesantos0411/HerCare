@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
+import { AppUpdatePrompt } from './components/AppUpdatePrompt';
 import { BottomNav } from './components/BottomNav';
 import { Home } from './pages/Home';
 import { Wellness } from './pages/Wellness';
@@ -26,6 +27,8 @@ import { PartnerSharing } from './pages/PartnerSharing';
 import { PartnerView } from './pages/PartnerView';
 import { useCurrentDayKey } from './hooks/useCurrentDayKey';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { APP_VERSION } from './utils/appInfo';
+import { fetchLatestAppUpdate, hasNewerAppUpdate, openAppUpdatePage, type AppUpdateInfo } from './utils/appUpdate';
 import { syncLowSleepAlert, syncScheduledCareNotifications } from './utils/careNotifications';
 import { getInitialMealEntries, type MealEntry } from './utils/meals';
 import type { NoteCategory } from './utils/notes';
@@ -109,9 +112,11 @@ function App() {
   const [sleepTargetHours] = useLocalStorage('hercare_sleep_target_hours', 7.5);
   const [scheduledShifts] = useLocalStorage<ShiftEntry[]>('hercare_scheduled_shifts', []);
   const [studyTimer, setStudyTimer] = useLocalStorage<StudyTimerState>('hercare_study_timer', createStudyTimerState());
+  const [dismissedUpdateVersion, setDismissedUpdateVersion] = useLocalStorage('hercare_update_prompt_dismissed_for', '');
   const [isDocumentVisible, setIsDocumentVisible] = useState(
     () => typeof document === 'undefined' || document.visibilityState === 'visible',
   );
+  const [availableAppUpdate, setAvailableAppUpdate] = useState<AppUpdateInfo | null>(null);
   const [appState, setAppState] = useState<AppState>(
     partnerViewerEnabled && partnerViewCode ? 'partner_dashboard' : hasCompletedSetup ? (isLoggedIn ? 'main' : 'login') : 'splash',
   );
@@ -120,6 +125,7 @@ function App() {
   const [selectedOpenWhenId, setSelectedOpenWhenId] = useState<string | null>(null);
   const [noteEditorCategory, setNoteEditorCategory] = useState<NoteCategory | null>(null);
   const lastHandledStudyCompletionAtRef = useRef(studyTimer.completedAt);
+  const hasCheckedForAppUpdateRef = useRef(false);
   const latestSleepLog = getLatestSleepLog(sleepLogs);
   const studyAlertsAllowed = notificationsEnabled && studyAlertsEnabled;
 
@@ -146,6 +152,37 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  useEffect(() => {
+    if (appState !== 'main' || hasCheckedForAppUpdateRef.current) {
+      return;
+    }
+
+    hasCheckedForAppUpdateRef.current = true;
+    const abortController = new AbortController();
+
+    void (async () => {
+      try {
+        const update = await fetchLatestAppUpdate(abortController.signal);
+
+        if (!hasNewerAppUpdate(update, APP_VERSION)) {
+          return;
+        }
+
+        if (!update || dismissedUpdateVersion === update.version) {
+          return;
+        }
+
+        setAvailableAppUpdate(update);
+      } catch {
+        // Ignore quiet update-check failures like offline mode or rate limits.
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [appState, dismissedUpdateVersion]);
 
   useEffect(() => {
     if (studyTimer.status !== 'running' || !studyTimer.endsAt) {
@@ -480,6 +517,24 @@ function App() {
     setStudyTimer((currentTimer) => startStudyTimer(resetStudyTimer(currentTimer)));
   };
 
+  const handleDismissAppUpdate = () => {
+    if (availableAppUpdate) {
+      setDismissedUpdateVersion(availableAppUpdate.version);
+    }
+
+    setAvailableAppUpdate(null);
+  };
+
+  const handleOpenAppUpdate = () => {
+    if (!availableAppUpdate) {
+      return;
+    }
+
+    setDismissedUpdateVersion(availableAppUpdate.version);
+    openAppUpdatePage(availableAppUpdate);
+    setAvailableAppUpdate(null);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
@@ -678,6 +733,14 @@ function App() {
       <div className="view-container">{renderContent()}</div>
 
       {!hideBottomNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
+
+      {appState === 'main' && availableAppUpdate && (
+        <AppUpdatePrompt
+          update={availableAppUpdate}
+          onLater={handleDismissAppUpdate}
+          onOpenUpdate={handleOpenAppUpdate}
+        />
+      )}
     </>
   );
 }

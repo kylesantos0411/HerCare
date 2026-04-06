@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { APP_VERSION } from '../utils/appInfo';
 import type { ShiftType } from '../utils/shift';
 import './Settings.css';
 
@@ -177,7 +178,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <button className="logout-btn" onClick={onLogout}>
           Log Out
         </button>
-        <p className="app-version">HerCare Version 1.0.0</p>
+        <p className="app-version">HerCare Version {APP_VERSION}</p>
       </div>
     </div>
   );

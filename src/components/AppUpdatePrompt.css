@@ -1,0 +1,107 @@
+.app-update-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.app-update-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 11, 19, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+.app-update-modal {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 380px);
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 20px;
+  background-image:
+    radial-gradient(circle at top right, rgba(227, 154, 182, 0.22), transparent 42%),
+    linear-gradient(180deg, rgba(255, 250, 252, 0.98) 0%, rgba(247, 238, 242, 0.98) 100%);
+  border-color: rgba(227, 154, 182, 0.24);
+  box-shadow: 0 24px 60px rgba(17, 11, 19, 0.28);
+  animation: app-update-pop 0.24s ease-out;
+}
+
+.app-update-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-update-modal h3 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.app-update-copy {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.app-update-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-update-meta span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(227, 154, 182, 0.14);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.app-update-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body.night-shift-theme .app-update-backdrop {
+  background: rgba(9, 6, 13, 0.76);
+}
+
+body.night-shift-theme .app-update-modal {
+  background-image:
+    radial-gradient(circle at top right, rgba(157, 115, 136, 0.22), transparent 42%),
+    linear-gradient(180deg, rgba(29, 22, 32, 0.98) 0%, rgba(38, 29, 40, 0.98) 100%);
+  border-color: rgba(215, 162, 184, 0.22);
+  box-shadow: 0 28px 64px rgba(4, 3, 10, 0.52);
+}
+
+body.night-shift-theme .app-update-meta span {
+  background-color: rgba(29, 22, 32, 0.84);
+  border-color: rgba(157, 115, 136, 0.2);
+}
+
+@keyframes app-update-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
