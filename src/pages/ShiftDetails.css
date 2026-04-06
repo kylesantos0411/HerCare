@@ -1,0 +1,249 @@
+.shift-details-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-main);
+  padding: 8px;
+  margin-left: -8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn:hover {
+  background-color: var(--bg-secondary);
+}
+
+.modal-header h1 {
+  font-size: 20px;
+  margin: 0;
+  color: var(--text-main);
+  font-family: var(--font-body);
+}
+
+.shift-header-spacer {
+  width: 24px;
+}
+
+.large-shift-card,
+.empty-shift-card {
+  padding: 30px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shift-card-kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  opacity: 0.85;
+}
+
+.large-shift-card h2,
+.empty-shift-card h2 {
+  font-size: 28px;
+  margin-bottom: 24px;
+}
+
+.shift-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.current-shift-note {
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+.shift-schedule {
+  margin-top: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-header h3 {
+  font-size: 18px;
+  margin: 0 0 4px 0;
+  color: var(--text-main);
+  font-family: var(--font-body);
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.shift-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shift-schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.shift-schedule-copy {
+  flex: 1;
+}
+
+.shift-schedule-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.shift-schedule-topline h4 {
+  margin: 0;
+  font-size: 16px;
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.schedule-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.schedule-status.upcoming {
+  background-color: var(--color-secondary-light);
+  color: var(--color-secondary);
+}
+
+.schedule-status.in-progress {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
+.schedule-status.completed {
+  background-color: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+.shift-schedule-time {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.shift-schedule-notes {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.shift-edit-icon {
+  color: var(--color-primary);
+}
+
+.empty-list-card {
+  margin-bottom: 0;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.shift-tasks {
+  margin-top: 24px;
+  flex: 1;
+}
+
+.shift-tasks h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text-main);
+  font-family: var(--font-body);
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  font-family: var(--font-body);
+}
+
+.task-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-icon.checked {
+  color: var(--color-secondary);
+}
+
+.task-icon.placeholder {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.task-item.completed span {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.shift-actions-bottom {
+  margin-top: 24px;
+}

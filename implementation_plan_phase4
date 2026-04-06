@@ -1,0 +1,38 @@
+# HerCare App Implementation Plan (Phase 4)
+
+Based on the `her_care_ui_flow.md` document, we have successfully created the main tab navigation and the first-time setup flow. For Phase 4, we will flesh out the remaining **Minimum Viable Screens** that currently don't have dedicated pages.
+
+## Proposed Changes
+
+We will create the following dedicated sub-pages and wire them into the application's router logic:
+
+### 1. Settings (`src/pages/Settings.tsx` & `.css`)
+A dedicated user profile and settings page accessible from the Home screen or via a new header icon.
+- **Profile Info**: Name, Role
+- **Shift Preferences**: Day/Night schedule defaults
+- **Notifications**: Toggles for hydration and meal reminders
+
+### 2. Add Meal (`src/pages/AddMeal.tsx` & `.css`)
+A dedicated screen to add detailed meals.
+- Accessed by clicking "Add Meal" from the `Meals` tab.
+- Contains input fields for Meal Type, Time, Status, and Notes.
+
+### 3. Note Editor (`src/pages/NoteEditor.tsx` & `.css`)
+A dedicated text editor for composing thoughts.
+- Accessed via the "Plus" button on the `Notes` tab.
+- Contains an auto-expanding Title and Content text area.
+
+### 4. Router Updates (`src/App.tsx`)
+- Add new case statements in the `renderContent` block for `settings`, `add_meal`, and `note_editor`.
+- Implement `onNavigate` callbacks on the parent tabs to route users to these new screens.
+
+## User Review Required
+> [!IMPORTANT]
+> This phase will implement **Settings**, **Add Meal**, and **Note Editor**, taking us to full completion of the MVP screens listed in your specification document. 
+> 
+> Once approved, I'll execute this immediately!
+
+## Verification Plan
+1. Check that `npm run build` is warning/error free.
+2. Confirm the Settings button successfully routes to the `Settings` page.
+3. Confirm clicking "Add" on Meals and Notes tabs navigates to their respective detailed editors and can route back correctly.

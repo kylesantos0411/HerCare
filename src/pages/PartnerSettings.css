@@ -1,0 +1,51 @@
+.partner-settings-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+}
+
+.partner-settings-card,
+.partner-settings-note {
+  margin-bottom: 0;
+}
+
+.partner-settings-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.partner-settings-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+}
+
+.partner-settings-copy {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.partner-settings-copy strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.partner-settings-copy p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.partner-disconnect-btn {
+  margin-top: auto;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-weight: 600;
+  padding: 12px;
+  cursor: pointer;
+}

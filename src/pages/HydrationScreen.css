@@ -1,0 +1,226 @@
+.hydration-screen-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.hydration-screen-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.hydration-screen-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.hydration-summary-card {
+  margin-bottom: 24px;
+}
+
+.hydration-summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.hydration-kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-primary);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.hydration-summary-header h2 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.hydration-goal-chip {
+  background-color: var(--color-secondary-light);
+  color: var(--color-secondary);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hydration-progress-bar {
+  height: 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.hydration-progress-fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.hydration-section {
+  margin-bottom: 24px;
+}
+
+.hydration-section-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  margin-left: 4px;
+}
+
+.hydration-intake-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hydration-intake-btn {
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.hydration-intake-btn:hover {
+  transform: translateY(-1px);
+}
+
+.hydration-intake-btn span {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hydration-intake-btn small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hydration-reminder-card {
+  margin-bottom: 0;
+}
+
+.hydration-reminder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hydration-reminder-copy {
+  flex: 1;
+}
+
+.hydration-reminder-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.hydration-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+}
+
+.hydration-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.hydration-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background-color: var(--toggle-track);
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.hydration-toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 24px;
+  width: 24px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--bg-card-elevated);
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: var(--shadow-subtle);
+}
+
+.hydration-toggle-switch input:checked + .hydration-toggle-slider {
+  background-color: var(--color-secondary);
+}
+
+.hydration-toggle-switch input:checked + .hydration-toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.hydration-history-card {
+  margin-bottom: 0;
+}
+
+.hydration-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hydration-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hydration-history-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hydration-history-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hydration-history-copy strong {
+  font-size: 14px;
+}
+
+.hydration-history-copy span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hydration-screen-actions {
+  margin-top: auto;
+  padding: 8px 0 24px 0;
+}

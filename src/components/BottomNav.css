@@ -1,0 +1,67 @@
+.bottom-nav-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 86px;
+  background-color: var(--bg-nav);
+  backdrop-filter: blur(10px);
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: center;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  border-top: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-nav);
+  padding: 4px 8px 12px;
+  z-index: 100;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+  padding-top: 4px;
+}
+
+.nav-icon-wrapper {
+  position: relative;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nav-item.active {
+  color: var(--color-primary);
+}
+
+.nav-item.active .nav-icon-wrapper {
+  transform: translateY(-4px);
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  position: absolute;
+  bottom: -14px;
+  white-space: nowrap;
+}
+
+.nav-item.active .nav-label {
+  opacity: 1;
+  transform: translateY(0);
+}

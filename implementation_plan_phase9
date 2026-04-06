@@ -1,0 +1,30 @@
+# HerCare App Implementation Plan (Phase 9)
+
+Phase 9 completes the remaining detailed Wellness flows described in the UI documents by turning the current summary cards into true dedicated check-in experiences for **Hydration** and **Mood**.
+
+## Proposed Changes
+
+### 1. Hydration Screen (`HydrationScreen.tsx`)
+- Add a dedicated Hydration screen reachable from Wellness.
+- Support intake buttons, a draft history log, and a hydration reminder toggle.
+- Save hydration progress and reminder preferences back to local storage when the user finishes.
+
+### 2. Mood Check Screen (`MoodCheck.tsx`)
+- Add a dedicated Mood Check screen reachable from Wellness.
+- Capture the fields described in the UI flow: mood selection, energy level, stress level, and notes.
+- Persist each check-in to local storage and update the app's current mood summary.
+
+### 3. Wellness + Home Summary Upgrades
+- Convert the Wellness tab into a clean dashboard of summary cards that open Hydration, Sleep, and Mood detail flows.
+- Surface the newest mood and hydration context on Home so the dashboard insight can react to high stress or low energy, not just the old single mood flag.
+
+## User Review Required
+> [!IMPORTANT]
+> This phase follows directly from the UI flow documentation and completes the remaining detailed Wellness navigation after Phase 8's Sleep Log.
+>
+> Approval has already been given in this thread, so execution is proceeding immediately.
+
+## Verification Plan
+1. Open Wellness, enter the Hydration screen, log intake, save, and confirm the summary updates.
+2. Open Wellness, complete a Mood Check with energy/stress values, save, and confirm the summary updates.
+3. Return to Home and verify the dashboard insight can respond to the richer mood or hydration data.

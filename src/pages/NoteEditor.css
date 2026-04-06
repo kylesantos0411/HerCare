@@ -1,0 +1,232 @@
+.note-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-primary); /* Uses full background */
+  margin: -24px; /* Counteract view-container padding for edge-to-edge feel */
+  padding: 24px;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.text-save-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 16px;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.editor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.editor-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.editor-category-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.editor-category-chip.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.editor-reminder-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background-color: var(--bg-card);
+  box-shadow: var(--shadow-subtle);
+}
+
+.editor-reminder-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+}
+
+.editor-reminder-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.editor-title {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--text-main);
+  outline: none;
+  margin-bottom: 8px;
+}
+
+.editor-title::placeholder {
+  color: var(--placeholder);
+}
+
+.editor-date {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.editor-body {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-main);
+  resize: none;
+  outline: none;
+}
+
+.editor-body::placeholder {
+  color: var(--placeholder);
+  font-style: italic;
+}
+
+.editor-checklist-layout {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editor-checklist-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.editor-checklist-input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+}
+
+.editor-checklist-input::placeholder {
+  color: var(--placeholder);
+}
+
+.editor-checklist-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: none;
+  background-color: var(--color-primary);
+  color: var(--text-on-brand);
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editor-checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editor-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background-color: var(--bg-card);
+  box-shadow: var(--shadow-subtle);
+}
+
+.editor-checklist-bullet {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.editor-checklist-item span {
+  flex: 1;
+  color: var(--text-main);
+}
+
+.editor-checklist-remove-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.editor-checklist-empty {
+  padding: 18px 16px;
+  border-radius: 16px;
+  border: 1px dashed var(--border-soft);
+  color: var(--text-muted);
+  background-color: var(--bg-card);
+}
+
+.editor-checklist-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.editor-body-secondary {
+  flex: 0 0 160px;
+  padding: 16px 0 0;
+}
+
+@media (max-width: 360px) {
+  .editor-checklist-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editor-checklist-add-btn {
+    justify-content: center;
+  }
+}

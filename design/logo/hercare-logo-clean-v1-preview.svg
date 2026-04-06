@@ -1,0 +1,69 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="90" x2="1450" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8FC"/>
+      <stop offset="1" stop-color="#F4EAF4"/>
+    </linearGradient>
+    <linearGradient id="card" x1="310" y1="140" x2="1290" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDFE"/>
+      <stop offset="1" stop-color="#F7EEF5"/>
+    </linearGradient>
+    <filter id="panelShadow" x="224" y="84" width="1152" height="812" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="24"/>
+      <feGaussianBlur stdDeviation="28"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.298039 0 0 0 0 0.196078 0 0 0 0 0.278431 0 0 0 0.16 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="232" cy="835" r="210" fill="#F6DCE7" fill-opacity="0.34"/>
+  <circle cx="1430" cy="152" r="170" fill="#E8D6EA" fill-opacity="0.52"/>
+  <circle cx="1310" cy="850" r="250" fill="#F3E2EA" fill-opacity="0.36"/>
+
+  <g filter="url(#panelShadow)">
+    <rect x="280" y="120" width="1040" height="700" rx="52" fill="url(#card)"/>
+  </g>
+
+  <rect x="345" y="195" width="260" height="260" rx="64" fill="#F9ECF3"/>
+  <g transform="translate(218 72) scale(0.75)">
+    <path d="M256 138.5C281.9 105.9 328.5 97.7 364.7 119.9C405 144.6 417.8 197 393.5 235.2C373.4 266.9 335.9 300 281 343.5C266.4 355.1 245.6 355.1 231 343.5C176.1 300 138.6 266.9 118.5 235.2C94.2 197 107 144.6 147.3 119.9C183.5 97.7 230.1 105.9 256 138.5Z" fill="url(#heartGradientPreview)"/>
+    <path d="M145.4 319.4C161.4 301.1 184.6 290.6 208.9 290.6H296.8C310.3 290.6 320.6 300.4 320.6 312.7C320.6 325 310.3 334.8 296.8 334.8H247.8C240.8 334.8 235.1 340 235.1 346.3C235.1 352.6 240.8 357.8 247.8 357.8H321.8C345.5 357.8 366.4 369.8 378.4 388.3C383.4 396 379.8 406.1 371.1 409.5C338.8 422 301.1 429 257.4 429C196.6 429 149.3 412.3 115.5 379.9C104.8 369.7 104.9 353 115.9 343.1C125.8 334.2 135.7 326.5 145.4 319.4Z" fill="url(#handGradientPreview)"/>
+    <path d="M320.1 358.2C336.2 358.2 351.1 366.6 360 380.2C365.1 388 361.2 398.4 352.2 401.1C323.9 409.7 292.6 414 258.3 414C211.9 414 174.2 405.8 145.1 389.5" stroke="#E6B8AA" stroke-width="10" stroke-linecap="round"/>
+    <path d="M325.7 285.9C334.7 283.3 345.4 284.6 353.2 290.2C364.6 298.5 366.2 314.2 356.8 324.4L332.4 350.8" stroke="#F7D7CB" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M145.4 319.4C161.4 301.1 184.6 290.6 208.9 290.6H296.8C310.3 290.6 320.6 300.4 320.6 312.7C320.6 325 310.3 334.8 296.8 334.8H247.8C240.8 334.8 235.1 340 235.1 346.3C235.1 352.6 240.8 357.8 247.8 357.8H321.8C345.5 357.8 366.4 369.8 378.4 388.3C383.4 396 379.8 406.1 371.1 409.5C338.8 422 301.1 429 257.4 429C196.6 429 149.3 412.3 115.5 379.9C104.8 369.7 104.9 353 115.9 343.1C125.8 334.2 135.7 326.5 145.4 319.4Z" stroke="#83586E" stroke-width="13" stroke-linejoin="round"/>
+    <path d="M256 138.5C281.9 105.9 328.5 97.7 364.7 119.9C405 144.6 417.8 197 393.5 235.2C373.4 266.9 335.9 300 281 343.5C266.4 355.1 245.6 355.1 231 343.5C176.1 300 138.6 266.9 118.5 235.2C94.2 197 107 144.6 147.3 119.9C183.5 97.7 230.1 105.9 256 138.5Z" stroke="#83586E" stroke-width="13" stroke-linejoin="round"/>
+  </g>
+
+  <text x="680" y="292" fill="#7A5066" font-family="Georgia, 'Times New Roman', serif" font-size="118" font-weight="700" letter-spacing="-1.5">HerCare</text>
+  <text x="682" y="360" fill="#A47A8F" font-family="Segoe UI, Arial, sans-serif" font-size="34" letter-spacing="4.5">CLEANER LOGO DIRECTION</text>
+
+  <text x="346" y="540" fill="#5D4654" font-family="Georgia, 'Times New Roman', serif" font-size="50" font-weight="700">Why this feels cleaner</text>
+  <text x="348" y="612" fill="#7A6671" font-family="Segoe UI, Arial, sans-serif" font-size="35">• same heart-in-hand idea, but fewer glossy details</text>
+  <text x="348" y="670" fill="#7A6671" font-family="Segoe UI, Arial, sans-serif" font-size="35">• stronger silhouette for splash, app icon, and PDF showcase</text>
+  <text x="348" y="728" fill="#7A6671" font-family="Segoe UI, Arial, sans-serif" font-size="35">• softer pink-plum palette that still matches the app</text>
+
+  <rect x="987" y="530" width="246" height="224" rx="48" fill="#2A1F27"/>
+  <g transform="translate(1007 549) scale(0.43)">
+    <path d="M256 138.5C281.9 105.9 328.5 97.7 364.7 119.9C405 144.6 417.8 197 393.5 235.2C373.4 266.9 335.9 300 281 343.5C266.4 355.1 245.6 355.1 231 343.5C176.1 300 138.6 266.9 118.5 235.2C94.2 197 107 144.6 147.3 119.9C183.5 97.7 230.1 105.9 256 138.5Z" fill="url(#heartGradientPreview)"/>
+    <path d="M145.4 319.4C161.4 301.1 184.6 290.6 208.9 290.6H296.8C310.3 290.6 320.6 300.4 320.6 312.7C320.6 325 310.3 334.8 296.8 334.8H247.8C240.8 334.8 235.1 340 235.1 346.3C235.1 352.6 240.8 357.8 247.8 357.8H321.8C345.5 357.8 366.4 369.8 378.4 388.3C383.4 396 379.8 406.1 371.1 409.5C338.8 422 301.1 429 257.4 429C196.6 429 149.3 412.3 115.5 379.9C104.8 369.7 104.9 353 115.9 343.1C125.8 334.2 135.7 326.5 145.4 319.4Z" fill="url(#handGradientPreview)"/>
+    <path d="M145.4 319.4C161.4 301.1 184.6 290.6 208.9 290.6H296.8C310.3 290.6 320.6 300.4 320.6 312.7C320.6 325 310.3 334.8 296.8 334.8H247.8C240.8 334.8 235.1 340 235.1 346.3C235.1 352.6 240.8 357.8 247.8 357.8H321.8C345.5 357.8 366.4 369.8 378.4 388.3C383.4 396 379.8 406.1 371.1 409.5C338.8 422 301.1 429 257.4 429C196.6 429 149.3 412.3 115.5 379.9C104.8 369.7 104.9 353 115.9 343.1C125.8 334.2 135.7 326.5 145.4 319.4Z" stroke="#F1D8E5" stroke-width="13" stroke-linejoin="round"/>
+    <path d="M256 138.5C281.9 105.9 328.5 97.7 364.7 119.9C405 144.6 417.8 197 393.5 235.2C373.4 266.9 335.9 300 281 343.5C266.4 355.1 245.6 355.1 231 343.5C176.1 300 138.6 266.9 118.5 235.2C94.2 197 107 144.6 147.3 119.9C183.5 97.7 230.1 105.9 256 138.5Z" stroke="#F1D8E5" stroke-width="13" stroke-linejoin="round"/>
+  </g>
+  <text x="1038" y="734" fill="#F5E9F0" font-family="Segoe UI, Arial, sans-serif" font-size="24" letter-spacing="2.2">APP BADGE FEEL</text>
+
+  <defs>
+    <linearGradient id="heartGradientPreview" x1="150" y1="130" x2="360" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7AFC6"/>
+      <stop offset="0.52" stop-color="#D88CB1"/>
+      <stop offset="1" stop-color="#8E6AA8"/>
+    </linearGradient>
+    <linearGradient id="handGradientPreview" x1="136" y1="320" x2="355" y2="405" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE8DA"/>
+      <stop offset="1" stop-color="#F7CDBE"/>
+    </linearGradient>
+  </defs>
+</svg>

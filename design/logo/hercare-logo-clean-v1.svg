@@ -1,0 +1,67 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="heartGradient" x1="150" y1="130" x2="360" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7AFC6"/>
+      <stop offset="0.52" stop-color="#D88CB1"/>
+      <stop offset="1" stop-color="#8E6AA8"/>
+    </linearGradient>
+    <linearGradient id="heartShine" x1="208" y1="152" x2="326" y2="278" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7FB" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#FFF7FB" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="handGradient" x1="136" y1="320" x2="355" y2="405" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE8DA"/>
+      <stop offset="1" stop-color="#F7CDBE"/>
+    </linearGradient>
+    <filter id="softShadow" x="74" y="96" width="364" height="340" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="18"/>
+      <feGaussianBlur stdDeviation="18"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.270588 0 0 0 0 0.160784 0 0 0 0 0.258824 0 0 0 0.18 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <path
+      d="M256 138.5C281.9 105.9 328.5 97.7 364.7 119.9C405 144.6 417.8 197 393.5 235.2C373.4 266.9 335.9 300 281 343.5C266.4 355.1 245.6 355.1 231 343.5C176.1 300 138.6 266.9 118.5 235.2C94.2 197 107 144.6 147.3 119.9C183.5 97.7 230.1 105.9 256 138.5Z"
+      fill="url(#heartGradient)"
+    />
+    <path
+      d="M212 160C236 141 276 145 303 173C316 186 325 201 328 214C331 227 348 230 356 220C364 210 361 191 352 174C332 136 283 112 236 123C216 127 199 136 187 149C179 157 180 171 188 177C195 182 205 179 212 172V160Z"
+      fill="url(#heartShine)"
+      opacity="0.62"
+    />
+    <path
+      d="M145.4 319.4C161.4 301.1 184.6 290.6 208.9 290.6H296.8C310.3 290.6 320.6 300.4 320.6 312.7C320.6 325 310.3 334.8 296.8 334.8H247.8C240.8 334.8 235.1 340 235.1 346.3C235.1 352.6 240.8 357.8 247.8 357.8H321.8C345.5 357.8 366.4 369.8 378.4 388.3C383.4 396 379.8 406.1 371.1 409.5C338.8 422 301.1 429 257.4 429C196.6 429 149.3 412.3 115.5 379.9C104.8 369.7 104.9 353 115.9 343.1C125.8 334.2 135.7 326.5 145.4 319.4Z"
+      fill="url(#handGradient)"
+    />
+    <path
+      d="M320.1 358.2C336.2 358.2 351.1 366.6 360 380.2C365.1 388 361.2 398.4 352.2 401.1C323.9 409.7 292.6 414 258.3 414C211.9 414 174.2 405.8 145.1 389.5"
+      stroke="#E6B8AA"
+      stroke-width="10"
+      stroke-linecap="round"
+    />
+    <path
+      d="M325.7 285.9C334.7 283.3 345.4 284.6 353.2 290.2C364.6 298.5 366.2 314.2 356.8 324.4L332.4 350.8"
+      stroke="#F7D7CB"
+      stroke-width="18"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M145.4 319.4C161.4 301.1 184.6 290.6 208.9 290.6H296.8C310.3 290.6 320.6 300.4 320.6 312.7C320.6 325 310.3 334.8 296.8 334.8H247.8C240.8 334.8 235.1 340 235.1 346.3C235.1 352.6 240.8 357.8 247.8 357.8H321.8C345.5 357.8 366.4 369.8 378.4 388.3C383.4 396 379.8 406.1 371.1 409.5C338.8 422 301.1 429 257.4 429C196.6 429 149.3 412.3 115.5 379.9C104.8 369.7 104.9 353 115.9 343.1C125.8 334.2 135.7 326.5 145.4 319.4Z"
+      stroke="#83586E"
+      stroke-width="13"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M256 138.5C281.9 105.9 328.5 97.7 364.7 119.9C405 144.6 417.8 197 393.5 235.2C373.4 266.9 335.9 300 281 343.5C266.4 355.1 245.6 355.1 231 343.5C176.1 300 138.6 266.9 118.5 235.2C94.2 197 107 144.6 147.3 119.9C183.5 97.7 230.1 105.9 256 138.5Z"
+      stroke="#83586E"
+      stroke-width="13"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>

@@ -1,0 +1,145 @@
+.shift-editor-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.shift-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.shift-editor-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.shift-editor-section {
+  margin-bottom: 24px;
+}
+
+.shift-editor-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  margin-left: 4px;
+}
+
+.shift-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.shift-type-btn {
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  padding: 16px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.shift-type-btn:hover {
+  transform: translateY(-1px);
+}
+
+.shift-type-btn.active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.shift-editor-card {
+  padding: 0;
+}
+
+.shift-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.shift-editor-icon {
+  color: var(--color-primary);
+  opacity: 0.9;
+}
+
+.shift-editor-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.shift-editor-field label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.shift-editor-input {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  outline: none;
+  width: 100%;
+}
+
+.shift-editor-divider {
+  height: 1px;
+  background-color: var(--border-soft);
+  margin: 0 20px;
+}
+
+.shift-notes-wrapper {
+  position: relative;
+}
+
+.shift-notes-icon {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  color: var(--color-primary);
+  opacity: 0.9;
+}
+
+.shift-notes {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  background-color: var(--bg-card);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text-main);
+  resize: none;
+  outline: none;
+  box-shadow: var(--shadow-subtle);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shift-notes:focus {
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-focus);
+}
+
+.shift-notes::placeholder {
+  color: var(--placeholder);
+}
+
+.shift-editor-actions {
+  margin-top: auto;
+  padding: 8px 0 24px 0;
+}

@@ -1,0 +1,32 @@
+# HerCare App Implementation Plan (Phase 8)
+
+Phase 8 closes the biggest remaining gap in the Wellness flow by implementing a true **Sleep Logging experience**. The UI flow docs call out Sleep as the next build priority, so this phase turns the current static sleep card into a fully usable logged workflow.
+
+## Proposed Changes
+
+### 1. Dedicated Sleep Log Screen (`SleepLog.tsx`)
+- Create a dedicated screen accessible from the Wellness tab.
+- Add the fields described in the UI flow: sleep start, sleep end, quality, and notes.
+- Return the user to Wellness after saving, matching the rest of the app's editor flows.
+
+### 2. Sleep Persistence + Goal Awareness
+- Establish a `hercare_sleep_logs` array in local storage.
+- Save each new sleep entry with duration metadata so we can render useful summaries.
+- Read the persisted sleep goal so the app can compare a logged night against the user's target.
+- Activate the existing onboarding goal counters so sleep and hydration goals are actually adjustable and persisted.
+
+### 3. Dynamic Sleep Summaries (`Wellness.tsx` and `Home.tsx`)
+- Replace the static sleep card content in Wellness with the newest saved sleep log.
+- Surface saved sleep duration in the Home wellness snapshot.
+- Expand the Smart Insight logic so short or poor sleep can influence the dashboard message.
+
+## User Review Required
+> [!IMPORTANT]
+> This phase upgrades Sleep from decorative UI into a functional, persistent flow that supports the Wellness and Home dashboards.
+>
+> Approval has already been given in this thread, so this plan is being executed immediately.
+
+## Verification Plan
+1. Open Wellness, tap `Log Sleep`, save a sleep entry, and confirm the Wellness card updates.
+2. Return to Home and verify the sleep snapshot and insight reflect the saved sleep data.
+3. Refresh the app and confirm the newest sleep log and goal values persist.

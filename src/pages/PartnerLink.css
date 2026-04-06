@@ -1,0 +1,91 @@
+.partner-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.partner-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.partner-header h1 {
+  margin-bottom: 4px;
+  font-size: 26px;
+}
+
+.partner-header .subtitle {
+  color: var(--text-muted);
+}
+
+.partner-empty-card,
+.partner-form-card,
+.partner-tip-card {
+  margin-bottom: 0;
+}
+
+.partner-empty-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.partner-empty-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.partner-note,
+.partner-tip-card p {
+  color: var(--text-muted);
+}
+
+.partner-form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.partner-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.partner-input-group label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.partner-input-shell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-card);
+  border-radius: 18px;
+  padding: 14px 16px;
+  color: var(--text-muted);
+}
+
+.partner-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  outline: none;
+}
+
+.partner-error {
+  color: var(--danger);
+  font-size: 14px;
+}
