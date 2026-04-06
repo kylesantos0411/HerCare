@@ -1,11 +1,15 @@
+export const STUDY_MINUTES_MIN = 1;
+export const STUDY_MINUTES_MAX = 240;
+export const DEFAULT_STUDY_MINUTES = 30;
+
 export const studyPresetOptions = [
-  { minutes: 2, label: '2m', description: 'Ultra quick' },
-  { minutes: 5, label: '5m', description: 'Short break study' },
-  { minutes: 10, label: '10m', description: 'Light focus' },
-  { minutes: 25, label: '25m', description: 'Full Pomodoro' },
+  { minutes: 30, label: '30m', description: 'Gentle focus block' },
+  { minutes: 60, label: '1h', description: 'Steady study hour' },
+  { minutes: 90, label: '1h 30m', description: 'Longer deep-focus stretch' },
+  { minutes: 120, label: '2h', description: 'Big study session' },
 ] as const;
 
-export type StudyPresetMinutes = (typeof studyPresetOptions)[number]['minutes'];
+export type StudyPresetMinutes = number;
 
 export type StudyTimerStatus = 'idle' | 'running' | 'paused' | 'completed';
 
@@ -19,15 +23,44 @@ export interface StudyTimerState {
   completedSessions: number;
 }
 
-function getStudyTotalSeconds(minutes: StudyPresetMinutes) {
-  return minutes * 60;
+export function sanitizeStudyMinutes(minutes: number, fallback = DEFAULT_STUDY_MINUTES) {
+  if (!Number.isFinite(minutes)) {
+    return fallback;
+  }
+
+  return Math.min(STUDY_MINUTES_MAX, Math.max(STUDY_MINUTES_MIN, Math.round(minutes)));
 }
 
-export function createStudyTimerState(selectedMinutes: StudyPresetMinutes = 5): StudyTimerState {
+export function isStudyPresetMinutes(minutes: number) {
+  return studyPresetOptions.some((option) => option.minutes === sanitizeStudyMinutes(minutes));
+}
+
+function formatStudyMinutesLabel(minutes: number) {
+  const safeMinutes = sanitizeStudyMinutes(minutes);
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+
+  if (hours > 0 && remainingMinutes > 0) {
+    return `${hours}h ${remainingMinutes}m`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h`;
+  }
+
+  return `${safeMinutes}m`;
+}
+
+function getStudyTotalSeconds(minutes: StudyPresetMinutes) {
+  return sanitizeStudyMinutes(minutes) * 60;
+}
+
+export function createStudyTimerState(selectedMinutes: StudyPresetMinutes = DEFAULT_STUDY_MINUTES): StudyTimerState {
+  const safeMinutes = sanitizeStudyMinutes(selectedMinutes);
   const totalSeconds = getStudyTotalSeconds(selectedMinutes);
 
   return {
-    selectedMinutes,
+    selectedMinutes: safeMinutes,
     totalSeconds,
     remainingSeconds: totalSeconds,
     status: 'idle',
@@ -38,15 +71,15 @@ export function createStudyTimerState(selectedMinutes: StudyPresetMinutes = 5): 
 }
 
 export function getStudyPresetOption(minutes: StudyPresetMinutes) {
-  return studyPresetOptions.find((option) => option.minutes === minutes) ?? studyPresetOptions[1];
+  return studyPresetOptions.find((option) => option.minutes === sanitizeStudyMinutes(minutes)) ?? null;
 }
 
 export function getStudyPresetLabel(minutes: StudyPresetMinutes) {
-  return getStudyPresetOption(minutes).label;
+  return getStudyPresetOption(minutes)?.label ?? formatStudyMinutesLabel(minutes);
 }
 
 export function getStudyPresetDescription(minutes: StudyPresetMinutes) {
-  return getStudyPresetOption(minutes).description;
+  return getStudyPresetOption(minutes)?.description ?? 'Custom focus time';
 }
 
 export function getStudyRemainingSeconds(endsAt: string, now = new Date()) {
@@ -62,8 +95,15 @@ export function getStudyProgress(timer: StudyTimerState) {
 }
 
 export function formatStudyCountdown(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 

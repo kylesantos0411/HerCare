@@ -24,9 +24,12 @@ import {
   type SleepLogEntry,
 } from '../utils/sleep';
 import {
+  formatStudyCountdown,
   getStudyPresetDescription,
   getStudyPresetLabel,
   getStudyProgress,
+  isStudyPresetMinutes,
+  studyPresetOptions,
   type StudyTimerState,
 } from '../utils/study';
 import {
@@ -107,22 +110,21 @@ function getInsightMessage(
 }
 
 function formatFocusStatus(studyTimer: StudyTimerState) {
-  const minutes = String(Math.floor(studyTimer.remainingSeconds / 60)).padStart(2, '0');
-  const seconds = String(studyTimer.remainingSeconds % 60).padStart(2, '0');
+  const countdownLabel = formatStudyCountdown(studyTimer.remainingSeconds);
 
   if (studyTimer.status === 'running') {
-    return `${minutes}:${seconds} left`;
+    return `${countdownLabel} left`;
   }
 
   if (studyTimer.status === 'paused') {
-    return `${minutes}:${seconds} paused`;
+    return `${countdownLabel} paused`;
   }
 
   if (studyTimer.status === 'completed') {
     return 'Session complete';
   }
 
-  return `${studyTimer.selectedMinutes}-minute reset ready`;
+  return `${getStudyPresetLabel(studyTimer.selectedMinutes)} reset ready`;
 }
 
 function getFocusHelperCopy(studyTimer: StudyTimerState) {
@@ -136,6 +138,10 @@ function getFocusHelperCopy(studyTimer: StudyTimerState) {
 
   if (studyTimer.status === 'completed') {
     return 'Good job, baby. Enough na yan for today.';
+  }
+
+  if (!isStudyPresetMinutes(studyTimer.selectedMinutes)) {
+    return 'Custom focus window ready for today.';
   }
 
   return `${getStudyPresetDescription(studyTimer.selectedMinutes)} for duty breaks, low energy, or rest days.`;
@@ -435,10 +441,12 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer }) => {
           </div>
 
           <div className="quick-focus-presets">
-            <span>2m</span>
-            <span>5m</span>
-            <span>10m</span>
-            <span>25m</span>
+            {studyPresetOptions.map((preset) => (
+              <span key={preset.minutes}>{preset.label}</span>
+            ))}
+            {!isStudyPresetMinutes(studyTimer.selectedMinutes) && (
+              <span>{getStudyPresetLabel(studyTimer.selectedMinutes)}</span>
+            )}
           </div>
 
           <Button variant="secondary" fullWidth onClick={() => onNavigate('study')}>

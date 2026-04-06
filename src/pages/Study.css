@@ -214,6 +214,95 @@
   transform: none;
 }
 
+.study-custom-time {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(227, 154, 182, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.study-custom-time.active {
+  border-color: rgba(227, 154, 182, 0.38);
+  box-shadow: 0 10px 24px rgba(227, 154, 182, 0.12);
+}
+
+.study-custom-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.study-custom-title {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.study-custom-copy span,
+.study-custom-hint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.study-custom-hint.error {
+  color: var(--danger);
+}
+
+.study-custom-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.study-custom-input-shell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(227, 154, 182, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.study-custom-input-shell input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+
+.study-custom-input-shell input::-webkit-outer-spin-button,
+.study-custom-input-shell input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.study-custom-input-shell input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.study-custom-input-shell span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .study-action-row {
   position: relative;
   z-index: 1;
@@ -300,6 +389,36 @@
   flex-direction: column;
   gap: 10px;
   margin-top: 18px;
+}
+
+.study-complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.study-complete-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 11, 19, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.study-complete-modal {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  margin-bottom: 0;
+  background-image:
+    radial-gradient(circle at top, rgba(157, 115, 136, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 250, 252, 0.98) 0%, rgba(247, 238, 242, 0.98) 100%);
+  border-color: rgba(227, 154, 182, 0.24);
+  box-shadow: 0 24px 60px rgba(17, 11, 19, 0.28);
+  animation: study-complete-pop 0.26s ease-out;
 }
 
 .study-alert-hint {
@@ -435,6 +554,25 @@ body.night-shift-theme .study-preset-btn.active {
   box-shadow: 0 10px 24px rgba(5, 4, 12, 0.32);
 }
 
+body.night-shift-theme .study-custom-time {
+  background: rgba(20, 15, 23, 0.78);
+  border-color: rgba(157, 115, 136, 0.18);
+}
+
+body.night-shift-theme .study-custom-time.active {
+  border-color: rgba(215, 162, 184, 0.28);
+  box-shadow: 0 10px 24px rgba(5, 4, 12, 0.28);
+}
+
+body.night-shift-theme .study-custom-input-shell {
+  background: rgba(29, 22, 32, 0.92);
+  border-color: rgba(157, 115, 136, 0.22);
+}
+
+body.night-shift-theme .study-custom-input-shell input {
+  color: var(--text-main);
+}
+
 body.night-shift-theme .study-action-row .btn-ghost {
   background-color: rgba(29, 22, 32, 0.82);
   border: 1px solid rgba(157, 115, 136, 0.18);
@@ -445,6 +583,18 @@ body.night-shift-theme .study-context-card,
 body.night-shift-theme .study-complete-card {
   background-image: linear-gradient(180deg, rgba(29, 22, 32, 0.98), rgba(38, 29, 40, 0.98));
   border-color: rgba(157, 115, 136, 0.18);
+}
+
+body.night-shift-theme .study-complete-backdrop {
+  background: rgba(9, 6, 13, 0.76);
+}
+
+body.night-shift-theme .study-complete-modal {
+  background-image:
+    radial-gradient(circle at top, rgba(157, 115, 136, 0.2), transparent 40%),
+    linear-gradient(180deg, rgba(29, 22, 32, 0.98), rgba(38, 29, 40, 0.98));
+  border-color: rgba(215, 162, 184, 0.24);
+  box-shadow: 0 28px 64px rgba(4, 3, 10, 0.52);
 }
 
 body.night-shift-theme .study-context-header span {
@@ -485,5 +635,17 @@ body.night-shift-theme .study-alert-settings-btn {
   50% {
     opacity: 1;
     transform: scale(1.02);
+  }
+}
+
+@keyframes study-complete-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
