@@ -2,28 +2,37 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /partnerShares/{shareCode} {
+      function isOwner() {
+        return request.auth != null && resource.data.ownerUid == request.auth.uid;
+      }
+
+      function isPartner() {
+        return request.auth != null && resource.data.partnerUid == request.auth.uid;
+      }
+
+      function isInitialPartnerClaim() {
+        return request.auth != null
+          && resource.data.partnerUid == null
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.shareCode == resource.id
+          && request.resource.data.partnerUid == request.auth.uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'partnerUid',
+            'partnerName',
+            'updatedAtIso',
+          ]);
+      }
+
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.partnerUid == null;
+        && request.resource.data.partnerUid == null
+        && request.resource.data.shareCode == resource.id;
 
       allow read: if request.auth != null
-        && (
-          resource.data.ownerUid == request.auth.uid
-          || resource.data.partnerUid == request.auth.uid
-          || resource.data.partnerUid == null
-        );
+        && (isOwner() || isPartner());
 
       allow update: if request.auth != null
-        && (
-          resource.data.ownerUid == request.auth.uid
-          || resource.data.partnerUid == request.auth.uid
-          || (
-            resource.data.partnerUid == null
-            && request.resource.data.ownerUid == resource.data.ownerUid
-            && request.resource.data.shareCode == resource.id
-            && request.resource.data.partnerUid == request.auth.uid
-          )
-        );
+        && (isOwner() || isPartner() || isInitialPartnerClaim());
 
       allow delete: if request.auth != null
         && resource.data.ownerUid == request.auth.uid;

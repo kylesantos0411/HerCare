@@ -294,23 +294,25 @@ export async function connectToPartnerShare(shareCode: string, partnerName: stri
 
   const session = await ensureConfiguredSession();
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
-  const snapshot = await getDoc(shareRef);
+  
+  try {
+    await updateDoc(shareRef, {
+      partnerUid: session.user.uid,
+      partnerName: partnerName.trim() || 'Kai',
+      updatedAtIso: new Date().toISOString(),
+    });
+  } catch (caughtError) {
+    const errorCode =
+      caughtError && typeof caughtError === 'object' && 'code' in caughtError && typeof caughtError.code === 'string'
+        ? caughtError.code
+        : '';
 
-  if (!snapshot.exists()) {
-    throw new Error('That share code was not found.');
+    if (errorCode === 'not-found' || errorCode === 'permission-denied') {
+      throw new Error('That share code is unavailable. Check the code and try again.');
+    }
+
+    throw caughtError;
   }
-
-  const data = snapshot.data() as PartnerShareDocument;
-
-  if (data.partnerUid && data.partnerUid !== session.user.uid) {
-    throw new Error('That share code is already linked to another partner device.');
-  }
-
-  await updateDoc(shareRef, {
-    partnerUid: session.user.uid,
-    partnerName: partnerName.trim() || 'Kai',
-    updatedAtIso: new Date().toISOString(),
-  });
 
   return normalizedCode;
 }
