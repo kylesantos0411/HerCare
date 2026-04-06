@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "apk:debug": "powershell -ExecutionPolicy Bypass -File ./build-apk.ps1",
-    "showcase:pdf": "npm run build && node ./scripts/generate-showcase.mjs",
     "push:deploy": "npx firebase-tools deploy --only functions",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -89,7 +89,6 @@ The shareable APK is generated at:
 - `npm run dev` - start the Vite dev server
 - `npm run build` - run TypeScript build and Vite production build
 - `npm run apk:debug` - build the Android debug APK
-- `npm run showcase:pdf` - generate the showcase output
 - `npm run push:deploy` - deploy Firebase functions only
 - `npm run lint` - run ESLint
 
@@ -104,7 +103,6 @@ src/
 android/         Capacitor Android project
 functions/       Firebase Cloud Functions
 design/          Logo and supporting design assets
-scripts/         Helper scripts for previews and showcase generation
 ```
 
 ## Current Highlights
