@@ -68,15 +68,15 @@ npm run dev
 npm run build
 ```
 
-### 5. Build the Android APK
+### 5. Build the signed Android release APK
 
 ```bash
-npm run apk:debug
+npm run apk:release
 ```
 
 The shareable APK is generated at:
 
-`android/app/build/outputs/apk/debug/HerCare-v1.0.0.apk`
+`android/app/build/outputs/apk/release/HerCare-v1.0.0-release.apk`
 
 ## Firebase Notes
 
@@ -88,7 +88,8 @@ The shareable APK is generated at:
 
 - `npm run dev` - start the Vite dev server
 - `npm run build` - run TypeScript build and Vite production build
-- `npm run apk:debug` - build the shareable Android APK
+- `npm run apk:debug` - build the debug APK
+- `npm run apk:release` - build the signed release APK
 - `npm run push:deploy` - deploy Firebase functions only
 - `npm run lint` - run ESLint
 

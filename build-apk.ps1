@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
   [switch]$SkipWebBuild,
-  [switch]$SkipAndroidSync
+  [switch]$SkipAndroidSync,
+  [switch]$Release
 )
 
 Set-StrictMode -Version Latest
@@ -49,9 +50,9 @@ function Invoke-CheckedCommand {
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $androidRoot = Join-Path $projectRoot 'android'
-$apkPath = Join-Path $androidRoot 'app\build\outputs\apk\debug\app-debug.apk'
 $packageJsonPath = Join-Path $projectRoot 'package.json'
 $gradleCache = Join-Path $projectRoot '.gradle-cache'
+$releaseSigningPropertiesPath = Join-Path $androidRoot 'release-signing.properties'
 
 if (-not (Test-Path $packageJsonPath)) {
   throw "package.json not found at '$packageJsonPath'."
@@ -65,10 +66,19 @@ if (-not $releaseVersion) {
 }
 
 $shareableApkName = "HerCare-v$releaseVersion.apk"
-$shareableApkPath = Join-Path $androidRoot "app\build\outputs\apk\debug\$shareableApkName"
+$buildVariant = if ($Release) { 'release' } else { 'debug' }
+$gradleTask = if ($Release) { 'assembleRelease' } else { 'assembleDebug' }
+$defaultApkName = if ($Release) { 'app-release.apk' } else { 'app-debug.apk' }
+$apkPath = Join-Path $androidRoot "app\build\outputs\apk\$buildVariant\$defaultApkName"
+$shareableApkName = if ($Release) { "HerCare-v$releaseVersion-release.apk" } else { "HerCare-v$releaseVersion.apk" }
+$shareableApkPath = Join-Path $androidRoot "app\build\outputs\apk\$buildVariant\$shareableApkName"
 
 if (-not (Test-Path $androidRoot)) {
   throw "Android project not found at '$androidRoot'. Run 'npx.cmd cap add android' first."
+}
+
+if ($Release -and -not (Test-Path $releaseSigningPropertiesPath)) {
+  throw "Release signing is not configured yet. Create '$releaseSigningPropertiesPath' first."
 }
 
 $javaHome = Get-FirstExistingPath @(
@@ -115,7 +125,7 @@ if (-not $SkipAndroidSync) {
   Invoke-CheckedCommand -FilePath 'npx.cmd' -Arguments @('cap', 'sync', 'android') -WorkingDirectory $projectRoot
 }
 
-Invoke-CheckedCommand -FilePath '.\gradlew.bat' -Arguments @('assembleDebug', '--no-daemon', '--console=plain') -WorkingDirectory $androidRoot
+Invoke-CheckedCommand -FilePath '.\gradlew.bat' -Arguments @($gradleTask, '--no-daemon', '--console=plain') -WorkingDirectory $androidRoot
 
 if (-not (Test-Path $apkPath)) {
   throw "APK build finished but '$apkPath' was not found."
