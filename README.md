@@ -2,7 +2,7 @@
 
 HerCare is a soft, supportive care companion app built for a girlfriend who works long and draining shifts. It brings together shift planning, wellness tracking, partner check-ins, and a gentle study timer in one calm mobile experience.
 
-![HerCare logo](public/logo.png)
+![HerCare logo](design/logo/HerCare.png)
 
 ## What It Does
 
