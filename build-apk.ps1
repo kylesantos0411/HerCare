@@ -50,7 +50,22 @@ function Invoke-CheckedCommand {
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $androidRoot = Join-Path $projectRoot 'android'
 $apkPath = Join-Path $androidRoot 'app\build\outputs\apk\debug\app-debug.apk'
+$packageJsonPath = Join-Path $projectRoot 'package.json'
 $gradleCache = Join-Path $projectRoot '.gradle-cache'
+
+if (-not (Test-Path $packageJsonPath)) {
+  throw "package.json not found at '$packageJsonPath'."
+}
+
+$packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
+$releaseVersion = $packageJson.version
+
+if (-not $releaseVersion) {
+  throw "Unable to read the app version from '$packageJsonPath'."
+}
+
+$shareableApkName = "HerCare-v$releaseVersion.apk"
+$shareableApkPath = Join-Path $androidRoot "app\build\outputs\apk\debug\$shareableApkName"
 
 if (-not (Test-Path $androidRoot)) {
   throw "Android project not found at '$androidRoot'. Run 'npx.cmd cap add android' first."
@@ -107,8 +122,12 @@ if (-not (Test-Path $apkPath)) {
 }
 
 $apk = Get-Item $apkPath
+
+Copy-Item $apk.FullName $shareableApkPath -Force
+$shareableApk = Get-Item $shareableApkPath
+
 Write-Host ""
-Write-Host "APK ready:" -ForegroundColor Green
-Write-Host $apk.FullName -ForegroundColor Green
-Write-Host "Size: $([Math]::Round($apk.Length / 1MB, 2)) MB" -ForegroundColor Green
-Write-Host "Updated: $($apk.LastWriteTime)" -ForegroundColor Green
+Write-Host "Shareable APK ready:" -ForegroundColor Green
+Write-Host $shareableApk.FullName -ForegroundColor Green
+Write-Host "Size: $([Math]::Round($shareableApk.Length / 1MB, 2)) MB" -ForegroundColor Green
+Write-Host "Updated: $($shareableApk.LastWriteTime)" -ForegroundColor Green

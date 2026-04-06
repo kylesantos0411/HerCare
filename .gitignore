@@ -22,6 +22,12 @@ showcase-output/
 .firebase/
 design/logo/edge-preview-profile/
 
+# Local planning notes
+implementation_plan*
+partner_*_setup.md
+hercare_ui_flow.md
+her_care_ui_flow.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

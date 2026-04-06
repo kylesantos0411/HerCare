@@ -74,9 +74,9 @@ npm run build
 npm run apk:debug
 ```
 
-The debug APK is generated at:
+The shareable APK is generated at:
 
-`android/app/build/outputs/apk/debug/app-debug.apk`
+`android/app/build/outputs/apk/debug/HerCare-v1.0.0.apk`
 
 ## Firebase Notes
 
