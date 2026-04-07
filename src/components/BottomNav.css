@@ -7,7 +7,7 @@
   background-color: var(--bg-nav);
   backdrop-filter: blur(10px);
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--nav-tab-count, 6), minmax(0, 1fr));
   align-items: center;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
@@ -26,7 +26,7 @@
   justify-content: center;
   cursor: pointer;
   color: var(--text-muted);
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
   width: 100%;
   min-width: 0;
   position: relative;
@@ -64,4 +64,61 @@
 .nav-item.active .nav-label {
   opacity: 1;
   transform: translateY(0);
+}
+
+@media (orientation: landscape) and (min-width: 700px) {
+  body.app-variant-personal.app-main-shell .bottom-nav-container {
+    top: 18px;
+    bottom: 18px;
+    left: 18px;
+    right: auto;
+    width: var(--landscape-rail-width);
+    height: auto;
+    padding: 12px 10px;
+    grid-template-columns: 1fr;
+    grid-auto-rows: minmax(0, 1fr);
+    align-items: stretch;
+    border-radius: 34px;
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 20px 44px rgba(31, 21, 31, 0.14);
+  }
+
+  body.app-variant-personal.app-main-shell .nav-item {
+    min-height: 80px;
+    padding: 10px 8px;
+    border-radius: 24px;
+    gap: 6px;
+  }
+
+  body.app-variant-personal.app-main-shell .nav-item.active {
+    background:
+      linear-gradient(180deg, rgba(227, 154, 182, 0.16), rgba(227, 154, 182, 0.08));
+    box-shadow: inset 0 0 0 1px rgba(227, 154, 182, 0.16);
+  }
+
+  body.app-variant-personal.app-main-shell .nav-item.active .nav-icon-wrapper {
+    transform: none;
+  }
+
+  body.app-variant-personal.app-main-shell .nav-label {
+    position: static;
+    bottom: auto;
+    opacity: 0.72;
+    transform: none;
+    font-size: 11px;
+  }
+
+  body.app-variant-personal.app-main-shell .nav-item.active .nav-label {
+    opacity: 1;
+  }
+
+  body.night-shift-theme.app-variant-personal.app-main-shell .bottom-nav-container {
+    box-shadow: 0 26px 40px rgba(3, 3, 8, 0.42);
+  }
+
+  body.night-shift-theme.app-variant-personal.app-main-shell .nav-item.active {
+    background:
+      linear-gradient(180deg, rgba(157, 115, 136, 0.26), rgba(61, 40, 52, 0.2));
+    box-shadow: inset 0 0 0 1px rgba(215, 162, 184, 0.14);
+  }
 }

@@ -47,7 +47,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <h1>Settings</h1>
       </header>
 
-      <section className="settings-section">
+      <section className="settings-section settings-section-profile">
         <h3>Profile</h3>
         <Card className="settings-card">
           <div className="settings-item">
@@ -72,7 +72,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </Card>
       </section>
 
-      <section className="settings-section">
+      <section className="settings-section settings-section-shift">
         <h3>Shift Preferences</h3>
         <Card className="settings-card settings-preference-card">
           <div className="settings-preference-grid">
@@ -89,7 +89,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </Card>
       </section>
 
-      <section className="settings-section">
+      <section className="settings-section settings-section-preferences">
         <h3>Preferences</h3>
         <Card className="settings-card">
           <div className="settings-item">
@@ -162,7 +162,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </section>
 
       {showPartnerTools && (
-        <section className="settings-section">
+        <section className="settings-section settings-section-partner">
           <h3>Partner</h3>
           <Card className="settings-card">
             <button className="settings-link-item" onClick={onOpenPartnerSharing}>

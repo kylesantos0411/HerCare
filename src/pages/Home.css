@@ -452,3 +452,78 @@ body.night-shift-theme .quick-focus-presets span {
   font-size: 13px;
   color: var(--text-muted);
 }
+
+@media (orientation: landscape) and (min-width: 700px) {
+  body.app-variant-personal.app-main-shell .home-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+    grid-template-areas:
+      'header header'
+      'shift wellness'
+      'partner insight'
+      'partner focus';
+    gap: 22px 24px;
+    align-items: start;
+  }
+
+  body.app-variant-personal.app-main-shell .home-header {
+    grid-area: header;
+    align-items: center;
+  }
+
+  body.app-variant-personal.app-main-shell .shift-section {
+    grid-area: shift;
+    align-self: start;
+  }
+
+  body.app-variant-personal.app-main-shell .wellness-snapshot {
+    grid-area: wellness;
+  }
+
+  body.app-variant-personal.app-main-shell .insight-section {
+    grid-area: insight;
+  }
+
+  body.app-variant-personal.app-main-shell .partner-quick-section {
+    grid-area: partner;
+  }
+
+  body.app-variant-personal.app-main-shell .quick-focus-section {
+    grid-area: focus;
+  }
+
+  body.app-variant-personal.app-main-shell .snapshot-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.app-variant-personal.app-main-shell .shift-card,
+  body.app-variant-personal.app-main-shell .partner-quick-card,
+  body.app-variant-personal.app-main-shell .quick-focus-card {
+    margin-bottom: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .partner-quick-presets {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  body.app-variant-personal.app-main-shell .partner-quick-actions {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+
+  body.app-variant-personal.app-main-shell .partner-quick-card {
+    min-height: 100%;
+  }
+
+  body.app-variant-personal.app-main-shell .quick-focus-card {
+    min-height: 100%;
+    padding: 22px;
+  }
+
+  body.app-variant-personal.app-main-shell .quick-focus-progress-copy {
+    align-items: center;
+  }
+
+  body.app-variant-personal.app-main-shell .quick-focus-progress-copy span {
+    max-width: 240px;
+  }
+}

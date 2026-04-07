@@ -34,7 +34,7 @@ async function ensurePartnerChannel() {
   await LocalNotifications.createChannel({
     id: PARTNER_ALERT_CHANNEL_ID,
     name: 'Partner check-ins',
-    description: 'Real-time partner check-in alerts from HerCare.',
+    description: 'Real-time partner check-ins and gentle nudges from HerCare.',
     importance: 4,
     visibility: 1,
     vibration: true,
@@ -43,7 +43,7 @@ async function ensurePartnerChannel() {
   });
 }
 
-export async function showPartnerCheckInAlert(title: string, body: string) {
+export async function showPartnerActivityAlert(title: string, body: string) {
   if (!isLocalNotificationsAvailable()) {
     return;
   }

@@ -240,3 +240,71 @@ input:checked + .slider:before {
 .animation-slide-in {
   animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2);
 }
+
+@media (orientation: landscape) and (min-width: 700px) {
+  body.app-variant-personal.app-main-shell .settings-container {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.88fr) minmax(320px, 1.12fr);
+    grid-template-areas:
+      'header header'
+      'profile preferences'
+      'shift preferences'
+      'footer partner';
+    gap: 22px 24px;
+    align-items: start;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-header {
+    grid-area: header;
+    padding-bottom: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-section {
+    margin-bottom: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-section-profile {
+    grid-area: profile;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-section-shift {
+    grid-area: shift;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-section-preferences {
+    grid-area: preferences;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-section-partner {
+    grid-area: partner;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-card {
+    margin-bottom: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-item,
+  body.app-variant-personal.app-main-shell .settings-link-item {
+    min-height: 82px;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-icon-name {
+    align-items: flex-start;
+  }
+
+  body.app-variant-personal.app-main-shell .settings-preference-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.app-variant-personal.app-main-shell .settings-footer {
+    grid-area: footer;
+    margin-top: 0;
+    padding: 0;
+    text-align: left;
+    align-self: end;
+  }
+
+  body.app-variant-personal.app-main-shell .logout-btn {
+    padding-left: 0;
+  }
+}

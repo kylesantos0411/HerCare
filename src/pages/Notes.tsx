@@ -85,45 +85,48 @@ export const Notes: React.FC<NotesProps> = ({ onAddNote }) => {
         </div>
       </header>
 
-      <div className="notes-filter-row">
-        <button
-          className={`notes-filter-chip ${activeCategory === 'All' ? 'active' : ''}`}
-          onClick={() => setActiveCategory('All')}
-        >
-          All Notes
-        </button>
-      </div>
-
-      <section className="notes-categories">
-        {categoryCards.map((card) => {
-          const Icon = card.icon;
-          const noteCount = getNoteCount(notes, card.category);
-          const isActive = activeCategory === card.category;
-
-          return (
-            <Card
-              key={card.category}
-              className={`note-card ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveCategory(card.category)}
+      <div className="notes-layout">
+        <div className="notes-browser-rail">
+          <div className="notes-filter-row">
+            <button
+              className={`notes-filter-chip ${activeCategory === 'All' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('All')}
             >
-              <div className="note-card-inner">
-                <div className={`note-icon-wrapper ${card.className}`}>
-                  <Icon size={20} />
-                </div>
-                <div className="note-card-content">
-                  <h3>{card.category}</h3>
-                  <p className="text-muted">
-                    {noteCount} {noteCount === 1 ? 'note' : 'notes'} | {card.description}
-                  </p>
-                </div>
-                <ChevronRight className="note-arrow" size={20} />
-              </div>
-            </Card>
-          );
-        })}
-      </section>
+              All Notes
+            </button>
+          </div>
 
-      <div className="recent-notes-preview">
+          <section className="notes-categories">
+            {categoryCards.map((card) => {
+              const Icon = card.icon;
+              const noteCount = getNoteCount(notes, card.category);
+              const isActive = activeCategory === card.category;
+
+              return (
+                <Card
+                  key={card.category}
+                  className={`note-card ${isActive ? 'active' : ''}`}
+                  onClick={() => setActiveCategory(card.category)}
+                >
+                  <div className="note-card-inner">
+                    <div className={`note-icon-wrapper ${card.className}`}>
+                      <Icon size={20} />
+                    </div>
+                    <div className="note-card-content">
+                      <h3>{card.category}</h3>
+                      <p className="text-muted">
+                        {noteCount} {noteCount === 1 ? 'note' : 'notes'} | {card.description}
+                      </p>
+                    </div>
+                    <ChevronRight className="note-arrow" size={20} />
+                  </div>
+                </Card>
+              );
+            })}
+          </section>
+        </div>
+
+        <div className="recent-notes-preview">
         {recentNotes.length > 0 ? (
           <>
             <div className="notes-section-header">
@@ -196,6 +199,7 @@ export const Notes: React.FC<NotesProps> = ({ onAddNote }) => {
             </Card>
           </>
         )}
+        </div>
       </div>
     </div>
   );

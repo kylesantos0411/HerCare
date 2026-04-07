@@ -35,9 +35,11 @@ import { getInitialMealEntries, type MealEntry } from './utils/meals';
 import type { NoteCategory } from './utils/notes';
 import {
   buildPartnerStatusSnapshot,
+  subscribeToPartnerShare,
   syncPartnerStatus,
   updatePartnerPushSubscription,
 } from './utils/partner';
+import { showPartnerActivityAlert } from './utils/partnerAlerts';
 import {
   registerPartnerPushNotifications,
   unregisterPartnerPushNotifications,
@@ -105,6 +107,10 @@ function App() {
     'Push alerts will be ready after this phone connects.',
   );
   const [partnerPushShareCode, setPartnerPushShareCode] = useLocalStorage('hercare_partner_push_share_code', '');
+  const [lastSeenPartnerNudgeKey, setLastSeenPartnerNudgeKey] = useLocalStorage(
+    'hercare_last_seen_partner_nudge_key',
+    '',
+  );
   const [shiftPreference] = useLocalStorage<ShiftType>('hercare_shift_preference', 'Night Duty');
   const [waterGoal] = useLocalStorage('hercare_water_target', 8);
   const [storedGlasses] = useLocalStorage('hercare_hydration_count', 0);
@@ -134,19 +140,31 @@ function App() {
   const [noteEditorCategory, setNoteEditorCategory] = useState<NoteCategory | null>(null);
   const lastHandledStudyCompletionAtRef = useRef(studyTimer.completedAt);
   const hasCheckedForAppUpdateRef = useRef(false);
+  const lastSeenPartnerNudgeKeyRef = useRef(lastSeenPartnerNudgeKey);
   const latestSleepLog = getLatestSleepLog(sleepLogs);
   const studyAlertsAllowed = notificationsEnabled && studyAlertsEnabled;
+
+  useEffect(() => {
+    lastSeenPartnerNudgeKeyRef.current = lastSeenPartnerNudgeKey;
+  }, [lastSeenPartnerNudgeKey]);
 
   useEffect(() => {
     const isPartnerFlow =
       SUPPORTS_PARTNER_FEATURES &&
       (appState === 'partner_link' || appState === 'partner_dashboard' || appState === 'partner_settings');
     const shouldUseDarkTheme = isPartnerFlow ? partnerDarkModeEnabled : nightShiftEnabled;
+    const variantClassName = `app-variant-${APP_VARIANT_CONFIG.id}`;
 
+    document.body.classList.add(variantClassName);
     document.body.classList.toggle('night-shift-theme', shouldUseDarkTheme);
+    document.body.classList.toggle('app-main-shell', appState === 'main');
+    document.body.classList.toggle('app-partner-flow', isPartnerFlow);
 
     return () => {
+      document.body.classList.remove(variantClassName);
       document.body.classList.remove('night-shift-theme');
+      document.body.classList.remove('app-main-shell');
+      document.body.classList.remove('app-partner-flow');
     };
   }, [appState, nightShiftEnabled, partnerDarkModeEnabled]);
 
@@ -377,6 +395,70 @@ function App() {
     studyTimer.totalSeconds,
     storedGlasses,
     waterGoal,
+  ]);
+
+  useEffect(() => {
+    if (!SUPPORTS_PARTNER_FEATURES || appState !== 'main' || !partnerSharingEnabled || !partnerShareCode) {
+      return;
+    }
+
+    let isCancelled = false;
+    let stopListening: (() => void) | undefined;
+
+    void subscribeToPartnerShare(
+      partnerShareCode,
+      (value) => {
+        if (isCancelled || !value?.latestPartnerNudge) {
+          return;
+        }
+
+        const nudgeKey = `${value.shareCode}:${value.latestPartnerNudge.createdAtIso}`;
+        const lastKnownNudgeKey = lastSeenPartnerNudgeKeyRef.current;
+
+        if (!lastKnownNudgeKey) {
+          lastSeenPartnerNudgeKeyRef.current = nudgeKey;
+          setLastSeenPartnerNudgeKey(nudgeKey);
+          return;
+        }
+
+        if (nudgeKey === lastKnownNudgeKey) {
+          return;
+        }
+
+        lastSeenPartnerNudgeKeyRef.current = nudgeKey;
+        setLastSeenPartnerNudgeKey(nudgeKey);
+
+        if (!notificationsEnabled) {
+          return;
+        }
+
+        void showPartnerActivityAlert(
+          value.latestPartnerNudge.title,
+          value.latestPartnerNudge.message,
+        );
+      },
+      () => {
+        // Keep owner-side nudge listening best-effort and quiet.
+      },
+    ).then((unsubscribe) => {
+      if (isCancelled) {
+        unsubscribe();
+        return;
+      }
+
+      stopListening = unsubscribe;
+    });
+
+    return () => {
+      isCancelled = true;
+      stopListening?.();
+    };
+  }, [
+    appState,
+    notificationsEnabled,
+    partnerShareCode,
+    partnerSharingEnabled,
+    setLastSeenPartnerNudgeKey,
   ]);
 
   useEffect(() => {
@@ -764,7 +846,7 @@ function App() {
 
   return (
     <>
-      <div className="view-container">{renderContent()}</div>
+      <div className={`view-container${hideBottomNav ? ' nav-hidden' : ''}`}>{renderContent()}</div>
 
       {!hideBottomNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showSupportTab={SHOW_SUPPORT_TAB} />}
 

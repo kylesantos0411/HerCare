@@ -649,3 +649,100 @@ body.night-shift-theme .study-alert-settings-btn {
     transform: translateY(0) scale(1);
   }
 }
+
+@media (orientation: landscape) and (min-width: 700px) {
+  body.app-variant-personal.app-main-shell .study-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.24fr) minmax(280px, 0.76fr);
+    grid-template-areas:
+      'header context'
+      'timer context';
+    gap: 24px;
+    align-items: start;
+  }
+
+  body.app-variant-personal.app-main-shell .study-header {
+    grid-area: header;
+    max-width: 42ch;
+  }
+
+  body.app-variant-personal.app-main-shell .study-timer-card {
+    grid-area: timer;
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(240px, 1.1fr);
+    grid-template-areas:
+      'top top'
+      'ring presets'
+      'ring custom'
+      'support actions'
+      'alerts alerts';
+    gap: 18px 22px;
+    align-items: start;
+    padding: 24px;
+  }
+
+  body.app-variant-personal.app-main-shell .study-card-topline {
+    grid-area: top;
+  }
+
+  body.app-variant-personal.app-main-shell .study-ring-shell {
+    grid-area: ring;
+    width: min(100%, 320px);
+    margin: 8px 0 0;
+  }
+
+  body.app-variant-personal.app-main-shell .study-support-copy {
+    grid-area: support;
+    max-width: none;
+    margin: 0;
+    text-align: left;
+  }
+
+  body.app-variant-personal.app-main-shell .study-preset-row {
+    grid-area: presets;
+    margin-top: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .study-custom-time {
+    grid-area: custom;
+    margin-top: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .study-custom-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.app-variant-personal.app-main-shell .study-custom-controls .hercare-btn {
+    width: 100%;
+  }
+
+  body.app-variant-personal.app-main-shell .study-action-row {
+    grid-area: actions;
+    margin-top: 0;
+    align-self: end;
+  }
+
+  body.app-variant-personal.app-main-shell .study-alert-hint {
+    grid-area: alerts;
+    margin-top: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .study-context-card {
+    grid-area: context;
+    position: sticky;
+    top: 0;
+    margin-bottom: 0;
+  }
+
+  body.app-variant-personal.app-main-shell .study-context-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.app-variant-personal.app-main-shell .study-context-item:last-child {
+    grid-column: 1 / -1;
+  }
+
+  body.app-variant-personal.app-main-shell .study-complete-overlay {
+    padding-left: calc(var(--landscape-rail-width) + 52px);
+  }
+}

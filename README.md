@@ -10,7 +10,7 @@ HerCare is a soft, supportive care companion app built for a girlfriend who work
 - Today's wellness tracking for water, sleep, mood, and meals
 - Smart insight cards based on recent wellness signals
 - Quick Partner Check-In with message presets and optional location sharing
-- Quick Focus with a flexible Pomodoro flow: `2m`, `5m`, `10m`, `25m`
+- Quick Focus with longer focus presets plus custom minutes: `30m`, `1h`, `1h 30m`, `2h`
 - Study alerts with in-app sound, vibration, and Android local notifications
 - Partner View so the connected partner can see shared care updates, including live study status
 - Night-shift friendly dark mode styling
@@ -76,7 +76,7 @@ npm run apk:release
 
 The shareable APK is generated at:
 
-`android/app/build/outputs/apk/release/HerCare-v1.0.0-release.apk`
+`android/app/build/outputs/apk/release/HerCare-v1.0.2-release.apk`
 
 ### 6. Build the signed Android App Bundle
 
@@ -86,7 +86,7 @@ npm run aab:release
 
 The Play Store bundle is generated at:
 
-`android/app/build/outputs/bundle/release/HerCare-v1.0.0-release.aab`
+`android/app/build/outputs/bundle/release/HerCare-v1.0.2-release.aab`
 
 ## Firebase Notes
 
@@ -119,9 +119,9 @@ design/          Logo and supporting design assets
 
 ## Current Highlights
 
-- Flexible Pomodoro with supportive Taglish copy
+- Flexible Pomodoro with supportive Taglish copy, longer presets, and custom minutes
 - Android study completion alerts with custom sound
-- Partner View live study countdown derived from synced session timing
+- Partner View live study countdown plus per-card partner nudges
 - Home flow ordered as:
   `Shift Planning -> Today's Wellness -> Smart Insight -> Quick Partner Check-In -> Quick Focus`
 

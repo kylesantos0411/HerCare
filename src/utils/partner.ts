@@ -113,6 +113,15 @@ export interface PartnerLocationCheckIn {
   sharedAtIso: string;
 }
 
+export type PartnerCareNudgeType = 'hydration' | 'meals' | 'mood' | 'sleep';
+
+export interface PartnerGentleNudge {
+  type: PartnerCareNudgeType;
+  title: string;
+  message: string;
+  createdAtIso: string;
+}
+
 export interface PartnerShareDocument {
   shareCode: string;
   ownerUid: string;
@@ -126,6 +135,7 @@ export interface PartnerShareDocument {
   partnerPushUpdatedAtIso: string | null;
   latestStatus: PartnerStatusSnapshot | null;
   latestCheckIn: PartnerQuickCheckIn | null;
+  latestPartnerNudge: PartnerGentleNudge | null;
   latestLocation: PartnerLocationCheckIn | null;
   createdAtIso: string;
   updatedAtIso: string;
@@ -323,6 +333,7 @@ export async function createPartnerShare(ownerName: string) {
         partnerPushUpdatedAtIso: null,
         latestStatus: null,
         latestCheckIn: null,
+        latestPartnerNudge: null,
         latestLocation: null,
         createdAtIso: nowIso,
         updatedAtIso: nowIso,
@@ -450,6 +461,35 @@ export async function sendPartnerQuickCheckIn(shareCode: string, message: string
     });
   } catch (caughtError) {
     throw createPartnerFriendlyError(caughtError, 'Unable to send the check-in right now.');
+  }
+}
+
+export async function sendPartnerCareNudge(
+  shareCode: string,
+  nudge: Pick<PartnerGentleNudge, 'type' | 'title' | 'message'>,
+) {
+  const normalizedCode = normalizeShareCode(shareCode);
+
+  if (!normalizedCode) {
+    throw new Error('Reconnect the partner code first.');
+  }
+
+  const session = await ensureConfiguredSession();
+  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
+  const createdAtIso = new Date().toISOString();
+
+  try {
+    await updateDoc(shareRef, {
+      latestPartnerNudge: {
+        type: nudge.type,
+        title: nudge.title.trim(),
+        message: nudge.message.trim(),
+        createdAtIso,
+      } satisfies PartnerGentleNudge,
+      updatedAtIso: createdAtIso,
+    });
+  } catch (caughtError) {
+    throw createPartnerFriendlyError(caughtError, 'Unable to send the gentle nudge right now.');
   }
 }
 

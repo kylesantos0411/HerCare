@@ -22,8 +22,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, sh
     tabs.push({ id: 'you', icon: User, label: 'You' });
   }
 
+  const navStyle = {
+    '--nav-tab-count': String(tabs.length),
+  } as React.CSSProperties;
+
   return (
-    <div className="bottom-nav-container">
+    <div className="bottom-nav-container" style={navStyle}>
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
