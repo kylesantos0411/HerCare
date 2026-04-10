@@ -101,6 +101,31 @@ export interface PartnerStatusSnapshot {
   study: PartnerStudyStatusSnapshot;
 }
 
+export interface PartnerWellnessStatusSnapshot {
+  dayKey: string;
+  updatedAtIso: string;
+  hydration: {
+    current: number;
+    goal: number;
+    lastLoggedAt: string | null;
+  };
+  meals: {
+    completedCount: number;
+    goalCount: number;
+    hasBreakfast: boolean;
+    lastMealType: MealType | null;
+    lastLoggedAt: string | null;
+  };
+  sleep: {
+    durationMinutes: number | null;
+    quality: SleepQuality | null;
+    qualityLabel: string;
+    targetHours: number;
+    belowTarget: boolean;
+    loggedAt: string | null;
+  };
+}
+
 export interface PartnerQuickCheckIn {
   message: string;
   createdAtIso: string;
@@ -134,8 +159,10 @@ export interface PartnerShareDocument {
   partnerPushAlertsEnabled: boolean;
   partnerPushUpdatedAtIso: string | null;
   latestStatus: PartnerStatusSnapshot | null;
+  latestPartnerCareStatus: PartnerWellnessStatusSnapshot | null;
   latestCheckIn: PartnerQuickCheckIn | null;
   latestPartnerNudge: PartnerGentleNudge | null;
+  latestOwnerNudge: PartnerGentleNudge | null;
   latestLocation: PartnerLocationCheckIn | null;
   createdAtIso: string;
   updatedAtIso: string;
@@ -155,6 +182,11 @@ interface BuildPartnerSnapshotOptions {
   shifts: ShiftEntry[];
   studyTimer: StudyTimerState;
 }
+
+type BuildPartnerWellnessSnapshotOptions = Pick<
+  BuildPartnerSnapshotOptions,
+  'dayKey' | 'referenceDate' | 'waterGoal' | 'hydrationEntries' | 'legacyHydrationCount' | 'sleepLogs' | 'sleepTargetHours' | 'mealEntries'
+>;
 
 function getPartnerErrorCode(error: unknown) {
   return error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : '';
@@ -208,6 +240,46 @@ function createShareCode() {
   return output;
 }
 
+function buildWellnessSections({
+  referenceDate,
+  waterGoal,
+  hydrationEntries,
+  legacyHydrationCount,
+  sleepLogs,
+  sleepTargetHours,
+  mealEntries,
+}: Omit<BuildPartnerWellnessSnapshotOptions, 'dayKey'>) {
+  const latestSleepLog = getLatestSleepLog(sleepLogs);
+  const todayHydrationEntries = getTodayHydrationEntries(hydrationEntries, referenceDate);
+  const todayMealEntries = getTodayMealEntries(mealEntries, referenceDate);
+  const mealProgress = getMealProgress(mealEntries, referenceDate);
+
+  return {
+    hydration: {
+      current: getCurrentHydrationCount(hydrationEntries, legacyHydrationCount, referenceDate),
+      goal: waterGoal,
+      lastLoggedAt: todayHydrationEntries[0]?.loggedAt ?? null,
+    },
+    meals: {
+      completedCount: mealProgress.completedCount,
+      goalCount: mealProgress.goalCount,
+      hasBreakfast: todayMealEntries.some(
+        (entry) => entry.type === 'Breakfast' && (entry.status === 'packed' || entry.status === 'eaten'),
+      ),
+      lastMealType: todayMealEntries[0]?.type ?? null,
+      lastLoggedAt: todayMealEntries[0]?.loggedAt ?? null,
+    },
+    sleep: {
+      durationMinutes: latestSleepLog?.durationMinutes ?? null,
+      quality: latestSleepLog?.quality ?? null,
+      qualityLabel: latestSleepLog ? sleepQualityLabels[latestSleepLog.quality] : 'No sleep log yet',
+      targetHours: sleepTargetHours,
+      belowTarget: isSleepBelowTarget(latestSleepLog, sleepTargetHours),
+      loggedAt: latestSleepLog?.loggedAt ?? null,
+    },
+  };
+}
+
 export function buildPartnerStatusSnapshot({
   dayKey,
   referenceDate,
@@ -223,33 +295,26 @@ export function buildPartnerStatusSnapshot({
   studyTimer,
 }: BuildPartnerSnapshotOptions): PartnerStatusSnapshot {
   const latestMoodEntry = getLatestMoodEntry(moodEntries);
-  const latestSleepLog = getLatestSleepLog(sleepLogs);
   const nextShift = getNextShift(shifts, referenceDate);
-  const todayHydrationEntries = getTodayHydrationEntries(hydrationEntries, referenceDate);
-  const todayMealEntries = getTodayMealEntries(mealEntries, referenceDate);
-  const mealProgress = getMealProgress(mealEntries, referenceDate);
   const studyRemainingSeconds =
     studyTimer.status === 'running' && studyTimer.endsAt
       ? getStudyRemainingSeconds(studyTimer.endsAt)
       : studyTimer.remainingSeconds;
+  const wellness = buildWellnessSections({
+    referenceDate,
+    waterGoal,
+    hydrationEntries,
+    legacyHydrationCount,
+    sleepLogs,
+    sleepTargetHours,
+    mealEntries,
+  });
 
   return {
     dayKey,
     updatedAtIso: new Date().toISOString(),
-    hydration: {
-      current: getCurrentHydrationCount(hydrationEntries, legacyHydrationCount, referenceDate),
-      goal: waterGoal,
-      lastLoggedAt: todayHydrationEntries[0]?.loggedAt ?? null,
-    },
-    meals: {
-      completedCount: mealProgress.completedCount,
-      goalCount: mealProgress.goalCount,
-      hasBreakfast: todayMealEntries.some(
-        (entry) => entry.type === 'Breakfast' && (entry.status === 'packed' || entry.status === 'eaten'),
-      ),
-      lastMealType: todayMealEntries[0]?.type ?? null,
-      lastLoggedAt: todayMealEntries[0]?.loggedAt ?? null,
-    },
+    hydration: wellness.hydration,
+    meals: wellness.meals,
     mood: {
       mood: latestMoodEntry?.mood ?? currentMood,
       label: latestMoodEntry ? moodLabels[latestMoodEntry.mood] : moodLabels[currentMood],
@@ -257,14 +322,7 @@ export function buildPartnerStatusSnapshot({
       stressLevel: latestMoodEntry?.stressLevel ?? null,
       updatedAt: latestMoodEntry?.loggedAt ?? null,
     },
-    sleep: {
-      durationMinutes: latestSleepLog?.durationMinutes ?? null,
-      quality: latestSleepLog?.quality ?? null,
-      qualityLabel: latestSleepLog ? sleepQualityLabels[latestSleepLog.quality] : 'No sleep log yet',
-      targetHours: sleepTargetHours,
-      belowTarget: isSleepBelowTarget(latestSleepLog, sleepTargetHours),
-      loggedAt: latestSleepLog?.loggedAt ?? null,
-    },
+    sleep: wellness.sleep,
     shift: {
       type: nextShift?.type ?? null,
       status: nextShift ? getShiftStatus(nextShift, referenceDate) : null,
@@ -284,6 +342,31 @@ export function buildPartnerStatusSnapshot({
       completedAtIso: studyTimer.completedAt,
       updatedAtIso: new Date().toISOString(),
     },
+  };
+}
+
+export function buildPartnerWellnessSnapshot({
+  dayKey,
+  referenceDate,
+  waterGoal,
+  hydrationEntries,
+  legacyHydrationCount,
+  sleepLogs,
+  sleepTargetHours,
+  mealEntries,
+}: BuildPartnerWellnessSnapshotOptions): PartnerWellnessStatusSnapshot {
+  return {
+    dayKey,
+    updatedAtIso: new Date().toISOString(),
+    ...buildWellnessSections({
+      referenceDate,
+      waterGoal,
+      hydrationEntries,
+      legacyHydrationCount,
+      sleepLogs,
+      sleepTargetHours,
+      mealEntries,
+    }),
   };
 }
 
@@ -332,8 +415,10 @@ export async function createPartnerShare(ownerName: string) {
         partnerPushAlertsEnabled: false,
         partnerPushUpdatedAtIso: null,
         latestStatus: null,
+        latestPartnerCareStatus: null,
         latestCheckIn: null,
         latestPartnerNudge: null,
+        latestOwnerNudge: null,
         latestLocation: null,
         createdAtIso: nowIso,
         updatedAtIso: nowIso,
@@ -441,6 +526,27 @@ export async function syncPartnerStatus(options: {
   }
 }
 
+export async function syncPartnerWellnessStatus(options: {
+  shareCode: string;
+  snapshot: PartnerWellnessStatusSnapshot;
+}) {
+  if (!options.shareCode || !isFirebaseConfigured()) {
+    return;
+  }
+
+  const session = await ensureConfiguredSession();
+  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(options.shareCode));
+
+  try {
+    await updateDoc(shareRef, {
+      latestPartnerCareStatus: options.snapshot,
+      updatedAtIso: new Date().toISOString(),
+    });
+  } catch {
+    // Best-effort background sync only.
+  }
+}
+
 export async function sendPartnerQuickCheckIn(shareCode: string, message: string) {
   const trimmedMessage = message.trim();
 
@@ -464,9 +570,11 @@ export async function sendPartnerQuickCheckIn(shareCode: string, message: string
   }
 }
 
-export async function sendPartnerCareNudge(
+async function sendCareNudgeToField(
   shareCode: string,
+  fieldName: 'latestPartnerNudge' | 'latestOwnerNudge',
   nudge: Pick<PartnerGentleNudge, 'type' | 'title' | 'message'>,
+  fallbackMessage: string,
 ) {
   const normalizedCode = normalizeShareCode(shareCode);
 
@@ -480,7 +588,7 @@ export async function sendPartnerCareNudge(
 
   try {
     await updateDoc(shareRef, {
-      latestPartnerNudge: {
+      [fieldName]: {
         type: nudge.type,
         title: nudge.title.trim(),
         message: nudge.message.trim(),
@@ -489,8 +597,32 @@ export async function sendPartnerCareNudge(
       updatedAtIso: createdAtIso,
     });
   } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to send the gentle nudge right now.');
+    throw createPartnerFriendlyError(caughtError, fallbackMessage);
   }
+}
+
+export async function sendPartnerCareNudge(
+  shareCode: string,
+  nudge: Pick<PartnerGentleNudge, 'type' | 'title' | 'message'>,
+) {
+  await sendCareNudgeToField(
+    shareCode,
+    'latestPartnerNudge',
+    nudge,
+    'Unable to send the gentle nudge right now.',
+  );
+}
+
+export async function sendOwnerCareNudge(
+  shareCode: string,
+  nudge: Pick<PartnerGentleNudge, 'type' | 'title' | 'message'>,
+) {
+  await sendCareNudgeToField(
+    shareCode,
+    'latestOwnerNudge',
+    nudge,
+    'Unable to send the reminder right now.',
+  );
 }
 
 export async function sharePartnerLocationCheckIn(

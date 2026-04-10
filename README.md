@@ -76,7 +76,7 @@ npm run apk:release
 
 The shareable APK is generated at:
 
-`android/app/build/outputs/apk/release/HerCare-v1.0.2-release.apk`
+`android/app/build/outputs/apk/release/HerCare-v1.0.3-release.apk`
 
 ### 6. Build the signed Android App Bundle
 
@@ -86,7 +86,7 @@ npm run aab:release
 
 The Play Store bundle is generated at:
 
-`android/app/build/outputs/bundle/release/HerCare-v1.0.2-release.aab`
+`android/app/build/outputs/bundle/release/HerCare-v1.0.3-release.aab`
 
 ## Firebase Notes
 
@@ -122,6 +122,7 @@ design/          Logo and supporting design assets
 - Flexible Pomodoro with supportive Taglish copy, longer presets, and custom minutes
 - Android study completion alerts with custom sound
 - Partner View live study countdown plus per-card partner nudges
+- Partner self-care logging with owner-to-partner nudges for water, meals, and sleep
 - Home flow ordered as:
   `Shift Planning -> Today's Wellness -> Smart Insight -> Quick Partner Check-In -> Quick Focus`
 

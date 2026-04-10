@@ -283,6 +283,24 @@ body.night-shift-theme .quick-focus-presets span {
   color: var(--text-muted);
 }
 
+body.night-shift-theme .partner-support-panel {
+  background:
+    radial-gradient(circle at top right, rgba(157, 115, 136, 0.26), transparent 40%),
+    linear-gradient(160deg, rgba(38, 29, 40, 0.98), rgba(29, 22, 32, 0.98));
+  border-color: rgba(157, 115, 136, 0.2);
+}
+
+body.night-shift-theme .partner-support-metric,
+body.night-shift-theme .partner-support-nudge-btn {
+  background-color: rgba(29, 22, 32, 0.86);
+  border-color: rgba(157, 115, 136, 0.2);
+}
+
+body.night-shift-theme .partner-support-status.waiting,
+body.night-shift-theme .partner-support-nudge-btn {
+  color: var(--color-accent);
+}
+
 .partner-quick-card {
   margin-bottom: 0;
   display: flex;
@@ -385,6 +403,131 @@ body.night-shift-theme .quick-focus-presets span {
 }
 
 .partner-quick-feedback.error {
+  color: var(--danger);
+}
+
+.partner-support-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(227, 154, 182, 0.14), transparent 42%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(246, 233, 241, 0.9));
+  border: 1px solid rgba(227, 154, 182, 0.12);
+}
+
+.partner-support-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.partner-support-copy {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.partner-support-copy h4 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.partner-support-copy p {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.partner-support-status {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.partner-support-status.connected {
+  background-color: rgba(145, 184, 160, 0.16);
+  color: var(--color-secondary);
+}
+
+.partner-support-status.waiting {
+  background-color: rgba(227, 154, 182, 0.14);
+  color: var(--color-primary);
+}
+
+.partner-support-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.partner-support-metric {
+  padding: 14px;
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(227, 154, 182, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.partner-support-metric span,
+.partner-support-metric small {
+  color: var(--text-muted);
+}
+
+.partner-support-metric strong {
+  font-size: 20px;
+}
+
+.partner-support-nudge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.partner-support-nudge-btn {
+  border: 1px solid rgba(227, 154, 182, 0.18);
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.82);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.partner-support-nudge-btn:hover:enabled {
+  transform: translateY(-1px);
+  border-color: rgba(227, 154, 182, 0.34);
+  box-shadow: var(--shadow-card);
+}
+
+.partner-support-nudge-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.partner-support-feedback {
+  font-size: 13px;
+}
+
+.partner-support-feedback.success {
+  color: var(--color-secondary);
+}
+
+.partner-support-feedback.error {
   color: var(--danger);
 }
 
@@ -510,6 +653,11 @@ body.night-shift-theme .quick-focus-presets span {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   }
 
+  body.app-variant-personal.app-main-shell .partner-support-metrics,
+  body.app-variant-personal.app-main-shell .partner-support-nudge-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   body.app-variant-personal.app-main-shell .partner-quick-card {
     min-height: 100%;
   }
@@ -525,5 +673,26 @@ body.night-shift-theme .quick-focus-presets span {
 
   body.app-variant-personal.app-main-shell .quick-focus-progress-copy span {
     max-width: 240px;
+  }
+}
+
+@media (max-width: 699px) {
+  .snapshot-cards,
+  .partner-quick-actions,
+  .partner-support-metrics,
+  .partner-support-nudge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .partner-quick-header,
+  .partner-support-header,
+  .quick-focus-header,
+  .quick-focus-progress-copy {
+    flex-direction: column;
+  }
+
+  .quick-focus-progress-copy span {
+    text-align: left;
+    max-width: none;
   }
 }

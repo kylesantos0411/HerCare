@@ -76,6 +76,40 @@
   font-size: 14px;
 }
 
+.partner-mode-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border-radius: 20px;
+  border: 1px solid var(--border-soft);
+  background-color: var(--bg-card);
+  box-shadow: var(--shadow-subtle);
+}
+
+.partner-mode-btn {
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.partner-mode-btn.active {
+  background: linear-gradient(135deg, rgba(227, 154, 182, 0.16) 0%, rgba(176, 168, 227, 0.14) 100%);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.partner-mode-btn:hover {
+  transform: translateY(-1px);
+}
+
 .partner-status-pill {
   padding: 6px 10px;
   border-radius: 999px;
@@ -248,15 +282,53 @@
   margin-top: 4px;
 }
 
+.partner-expanded-panel {
+  display: flex;
+  flex-direction: column;
+}
+
 body.night-shift-theme .partner-summary-nudge-btn {
   background-color: rgba(61, 40, 52, 0.54);
   border-color: rgba(157, 115, 136, 0.2);
   color: var(--color-accent);
 }
 
+body.night-shift-theme .partner-mode-switch {
+  background-color: rgba(29, 22, 32, 0.9);
+  border-color: rgba(157, 115, 136, 0.2);
+}
+
+body.night-shift-theme .partner-mode-btn.active {
+  background: linear-gradient(135deg, rgba(61, 40, 52, 0.88) 0%, rgba(36, 48, 43, 0.78) 100%);
+  color: var(--color-accent);
+}
+
 body.night-shift-theme .partner-summary-nudge-btn:hover:enabled {
   background-color: rgba(61, 40, 52, 0.72);
   border-color: rgba(215, 162, 184, 0.24);
+}
+
+@media (max-width: 699px) {
+  .partner-header {
+    flex-wrap: wrap;
+  }
+
+  .partner-hero-row,
+  .partner-study-header {
+    flex-direction: column;
+  }
+
+  .partner-mode-switch {
+    width: 100%;
+  }
+
+  .partner-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .partner-study-clock strong {
+    font-size: 28px;
+  }
 }
 
 @media (orientation: landscape) and (min-width: 700px) {
@@ -321,5 +393,9 @@ body.night-shift-theme .partner-summary-nudge-btn:hover:enabled {
   body.app-variant-personal.app-partner-flow .partner-actions {
     grid-column: 1 / -1;
     margin-top: 0;
+  }
+
+  body.app-variant-personal.app-partner-flow .partner-expanded-panel {
+    grid-column: 1 / -1;
   }
 }

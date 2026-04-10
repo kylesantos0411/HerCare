@@ -48,7 +48,7 @@ async function ensurePartnerPushChannel() {
   await PushNotifications.createChannel({
     id: PARTNER_PUSH_CHANNEL_ID,
     name: 'Partner alerts',
-    description: 'Push alerts for partner check-ins and location pins.',
+    description: 'Push alerts for partner check-ins, location pins, and gentle nudges.',
     importance: 4,
     visibility: 1,
     vibration: true,

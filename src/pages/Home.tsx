@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Moon,
+  BellRing,
   Droplet,
   Smile,
   Settings as SettingsIcon,
@@ -9,6 +10,7 @@ import {
   HeartHandshake,
   MapPinned,
   AlarmClock,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -16,7 +18,14 @@ import { APP_VARIANT_CONFIG } from '../config/appVariant';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useCurrentDayKey } from '../hooks/useCurrentDayKey';
 import { getCurrentDeviceLocation } from '../utils/deviceLocation';
-import { sendPartnerQuickCheckIn, sharePartnerLocationCheckIn } from '../utils/partner';
+import {
+  sendOwnerCareNudge,
+  sendPartnerQuickCheckIn,
+  sharePartnerLocationCheckIn,
+  subscribeToPartnerShare,
+  type PartnerCareNudgeType,
+  type PartnerShareDocument,
+} from '../utils/partner';
 import {
   formatDuration,
   formatTargetHours,
@@ -170,6 +179,48 @@ function getFocusHelperCopy(studyTimer: StudyTimerState) {
     : `${getStudyPresetDescription(studyTimer.selectedMinutes)} for busy days, low energy windows, or quick resets.`;
 }
 
+function getPartnerSupportNudgeCopy(
+  type: Extract<PartnerCareNudgeType, 'hydration' | 'meals' | 'sleep'>,
+  senderName: string,
+  status: PartnerShareDocument['latestPartnerCareStatus'] | null,
+) {
+  switch (type) {
+    case 'hydration': {
+      const current = status?.hydration.current ?? 0;
+      const goal = status?.hydration.goal ?? 8;
+
+      return {
+        buttonLabel: 'Nudge water',
+        title: `Little water reminder from ${senderName}`,
+        message: `Inom ka muna ng water baby. ${current}/${goal} ka pa lang today.`,
+      };
+    }
+    case 'meals': {
+      const needsBreakfast = !!status && !status.meals.hasBreakfast;
+
+      return {
+        buttonLabel: 'Nudge meals',
+        title: `Little food reminder from ${senderName}`,
+        message: needsBreakfast
+          ? 'Kain ka muna baby, di ka pa nakakabreakfast.'
+          : 'Kain ka muna baby kapag may small break ka na.',
+      };
+    }
+    case 'sleep':
+    default: {
+      const isBelowTarget = !!status?.sleep.belowTarget;
+
+      return {
+        buttonLabel: 'Nudge rest',
+        title: `Little rest reminder from ${senderName}`,
+        message: isBelowTarget
+          ? 'Pahinga ka muna baby kapag may chance ka, kulang pa rest mo.'
+          : 'Log mo rin rest mo baby para kita ko if nakabawi ka na.',
+      };
+    }
+  }
+}
+
 export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerTools }) => {
   const { referenceDate } = useCurrentDayKey();
   const [currentTime, setCurrentTime] = useState(() => new Date());
@@ -189,6 +240,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
   const [quickCheckInStatus, setQuickCheckInStatus] = useState('');
   const [quickCheckInError, setQuickCheckInError] = useState('');
   const [busyAction, setBusyAction] = useState<'checkin' | 'location' | null>(null);
+  const [partnerShareDoc, setPartnerShareDoc] = useState<PartnerShareDocument | null>(null);
+  const [partnerSupportError, setPartnerSupportError] = useState('');
+  const [sendingPartnerNudgeType, setSendingPartnerNudgeType] = useState<
+    Extract<PartnerCareNudgeType, 'hydration' | 'meals' | 'sleep'> | null
+  >(null);
+  const [partnerNudgeFeedback, setPartnerNudgeFeedback] = useState<{
+    tone: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const latestMoodEntry = getLatestMoodEntry(moodEntries);
   const latestSleepLog = getLatestSleepLog(sleepLogs);
@@ -217,6 +277,50 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
   const focusActionLabel = studyTimer.status === 'running' ? 'Return to Timer' : 'Open Study';
   const personalTone = APP_VARIANT_CONFIG.features.personalTone;
   const greetingName = name.trim();
+  const partnerConnected = Boolean(partnerShareDoc?.partnerUid);
+  const partnerCareStatus = partnerShareDoc?.latestPartnerCareStatus ?? null;
+
+  useEffect(() => {
+    if (!showPartnerTools || !partnerShareCode) {
+      setPartnerShareDoc(null);
+      setPartnerSupportError('');
+      return;
+    }
+
+    let isCancelled = false;
+    let stopListening: (() => void) | undefined;
+
+    void subscribeToPartnerShare(
+      partnerShareCode,
+      (value) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setPartnerShareDoc(value);
+        setPartnerSupportError('');
+      },
+      (caughtError) => {
+        if (isCancelled) {
+          return;
+        }
+
+        setPartnerSupportError(caughtError.message);
+      },
+    ).then((unsubscribe) => {
+      if (isCancelled) {
+        unsubscribe();
+        return;
+      }
+
+      stopListening = unsubscribe;
+    });
+
+    return () => {
+      isCancelled = true;
+      stopListening?.();
+    };
+  }, [partnerShareCode, showPartnerTools]);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -293,6 +397,49 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
       );
     } finally {
       setBusyAction(null);
+    }
+  };
+
+  const handleSendPartnerNudge = async (
+    type: Extract<PartnerCareNudgeType, 'hydration' | 'meals' | 'sleep'>,
+  ) => {
+    if (!partnerShareCode) {
+      setPartnerNudgeFeedback({
+        tone: 'error',
+        text: 'Create a partner share code first.',
+      });
+      return;
+    }
+
+    if (!partnerConnected) {
+      setPartnerNudgeFeedback({
+        tone: 'error',
+        text: 'Wait for the partner phone to connect first.',
+      });
+      return;
+    }
+
+    setPartnerNudgeFeedback(null);
+    setSendingPartnerNudgeType(type);
+
+    try {
+      const nudge = getPartnerSupportNudgeCopy(type, greetingName || name || 'your person', partnerCareStatus);
+      await sendOwnerCareNudge(partnerShareCode, {
+        type,
+        title: nudge.title,
+        message: nudge.message,
+      });
+      setPartnerNudgeFeedback({
+        tone: 'success',
+        text: `${nudge.buttonLabel} sent.`,
+      });
+    } catch (caughtError) {
+      setPartnerNudgeFeedback({
+        tone: 'error',
+        text: caughtError instanceof Error ? caughtError.message : 'Unable to send the reminder right now.',
+      });
+    } finally {
+      setSendingPartnerNudgeType(null);
     }
   };
 
@@ -430,6 +577,100 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
                 <MapPinned size={16} />
                 {busyAction === 'location' ? 'Sharing...' : 'Share Location'}
               </Button>
+            </div>
+
+            <div className="partner-support-panel">
+              <div className="partner-support-header">
+                <div className="partner-support-copy">
+                  <BellRing size={18} />
+                  <div>
+                    <h4>{partnerShareDoc?.partnerName ? `${partnerShareDoc.partnerName}'s self-care` : 'Partner self-care'}</h4>
+                    <p>
+                      {partnerConnected
+                        ? partnerCareStatus
+                          ? `Last synced ${new Date(partnerCareStatus.updatedAtIso).toLocaleTimeString([], {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}`
+                          : 'Waiting for the first hydration, meal, or sleep log.'
+                        : 'The partner phone can log water, meals, and sleep after it connects.'}
+                    </p>
+                  </div>
+                </div>
+                <span className={`partner-support-status ${partnerConnected ? 'connected' : 'waiting'}`}>
+                  {partnerConnected ? 'Connected' : 'Waiting'}
+                </span>
+              </div>
+
+              <div className="partner-support-metrics">
+                <div className="partner-support-metric">
+                  <Droplet size={16} />
+                  <span>Water</span>
+                  <strong>{partnerCareStatus ? `${partnerCareStatus.hydration.current}/${partnerCareStatus.hydration.goal}` : '--'}</strong>
+                  <small>
+                    {partnerCareStatus?.hydration.lastLoggedAt
+                      ? `Last ${new Date(partnerCareStatus.hydration.lastLoggedAt).toLocaleTimeString([], {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}`
+                      : 'No water log yet'}
+                  </small>
+                </div>
+
+                <div className="partner-support-metric">
+                  <UtensilsCrossed size={16} />
+                  <span>Meals</span>
+                  <strong>
+                    {partnerCareStatus
+                      ? `${partnerCareStatus.meals.completedCount}/${partnerCareStatus.meals.goalCount}`
+                      : '--'}
+                  </strong>
+                  <small>
+                    {partnerCareStatus
+                      ? partnerCareStatus.meals.hasBreakfast
+                        ? 'Breakfast logged'
+                        : 'Breakfast missing'
+                      : 'No meal log yet'}
+                  </small>
+                </div>
+
+                <div className="partner-support-metric">
+                  <Moon size={16} />
+                  <span>Sleep</span>
+                  <strong>
+                    {partnerCareStatus?.sleep.durationMinutes
+                      ? formatDuration(partnerCareStatus.sleep.durationMinutes)
+                      : 'No log'}
+                  </strong>
+                  <small>
+                    {partnerCareStatus ? partnerCareStatus.sleep.qualityLabel : 'No sleep log yet'}
+                  </small>
+                </div>
+              </div>
+
+              <div className="partner-support-nudge-grid">
+                {(['hydration', 'meals', 'sleep'] as const).map((type) => {
+                  const copy = getPartnerSupportNudgeCopy(type, greetingName || name || 'your person', partnerCareStatus);
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      className="partner-support-nudge-btn"
+                      onClick={() => void handleSendPartnerNudge(type)}
+                      disabled={!partnerConnected || sendingPartnerNudgeType !== null}
+                    >
+                      <BellRing size={14} />
+                      {sendingPartnerNudgeType === type ? 'Sending...' : copy.buttonLabel}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {partnerSupportError && <p className="partner-support-feedback error">{partnerSupportError}</p>}
+              {partnerNudgeFeedback && (
+                <p className={`partner-support-feedback ${partnerNudgeFeedback.tone}`}>{partnerNudgeFeedback.text}</p>
+              )}
             </div>
 
             {(quickCheckInStatus || quickCheckInError) && (

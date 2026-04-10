@@ -32,6 +32,23 @@ function buildPushPayload(beforeData, afterData, shareCode) {
     };
   }
 
+  const beforeOwnerNudgeAt = beforeData?.latestOwnerNudge?.createdAtIso || '';
+  const afterOwnerNudge = afterData?.latestOwnerNudge || null;
+  const afterOwnerNudgeAt = afterOwnerNudge?.createdAtIso || '';
+
+  if (afterOwnerNudgeAt && afterOwnerNudgeAt !== beforeOwnerNudgeAt) {
+    return {
+      title: afterOwnerNudge.title,
+      body: afterOwnerNudge.message,
+      data: {
+        type: 'partner_owner_nudge',
+        shareCode,
+        createdAtIso: afterOwnerNudgeAt,
+      },
+      tag: `partner-owner-nudge-${afterOwnerNudge.type || 'general'}`,
+    };
+  }
+
   const beforeLocationAt = beforeData?.latestLocation?.sharedAtIso || '';
   const afterLocation = afterData?.latestLocation || null;
   const afterLocationAt = afterLocation?.sharedAtIso || '';
