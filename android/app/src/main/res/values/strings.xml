@@ -5,4 +5,20 @@
     <string name="package_name">com.hercare.app</string>
     <string name="custom_url_scheme">com.hercare.app</string>
     <string name="default_notification_channel_id">hercare-partner-alerts</string>
+    <string name="widget_name">HerCare Quick Care</string>
+    <string name="widget_description">Fast access to hydration, meals, mood, sleep, shift plans, and notes.</string>
+    <string name="widget_brand">HerCare</string>
+    <string name="widget_kicker">Shift Ready</string>
+    <string name="widget_title">Quick care deck</string>
+    <string name="widget_support_default">Tap a stat to open. Use quick buttons to log.</string>
+    <string name="widget_metric_water">Water</string>
+    <string name="widget_metric_meals">Meals</string>
+    <string name="widget_metric_mood">Mood</string>
+    <string name="widget_metric_sleep">Sleep</string>
+    <string name="widget_action_hydration_log">+1 Water</string>
+    <string name="widget_action_breakfast">Breakfast</string>
+    <string name="widget_action_lunch">Lunch</string>
+    <string name="widget_action_dinner">Dinner</string>
+    <string name="widget_action_snack">Snack</string>
+    <string name="widget_action_shift">Shift</string>
 </resources>

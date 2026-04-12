@@ -59,6 +59,15 @@ export function getCurrentHydrationCount(entries: HydrationEntry[], legacyCount 
   return entries.length === 0 ? legacyCount : 0;
 }
 
+export function createHydrationEntry(amount: number, now = new Date()): HydrationEntry {
+  return {
+    id: `${now.getTime()}-${amount}`,
+    amount,
+    loggedAt: now.toISOString(),
+    timeLabel: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  };
+}
+
 export function formatHydrationAmount(amount: number) {
   return `${amount} ${amount === 1 ? 'glass' : 'glasses'}`;
 }

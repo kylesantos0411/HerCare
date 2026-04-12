@@ -31,7 +31,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { APP_VERSION } from './utils/appInfo';
 import { fetchLatestAppUpdate, hasNewerAppUpdate, openAppUpdatePage, type AppUpdateInfo } from './utils/appUpdate';
 import { syncLowSleepAlert, syncScheduledCareNotifications } from './utils/careNotifications';
-import { getInitialMealEntries, type MealEntry } from './utils/meals';
+import { createQuickMealEntry, getInitialMealEntries, getMealProgress, sortMealEntries, type MealEntry } from './utils/meals';
 import type { NoteCategory } from './utils/notes';
 import {
   buildPartnerStatusSnapshot,
@@ -44,7 +44,7 @@ import {
   registerPartnerPushNotifications,
   unregisterPartnerPushNotifications,
 } from './utils/partnerPush';
-import { getLatestSleepLog, type SleepLogEntry } from './utils/sleep';
+import { formatDuration, formatTargetHours, getLatestSleepLog, type SleepLogEntry } from './utils/sleep';
 import {
   completeStudyTimer,
   createStudyTimerState,
@@ -63,7 +63,21 @@ import {
   triggerStudyCompletionFeedback,
 } from './utils/studyAlerts';
 import type { ShiftEntry, ShiftType } from './utils/shift';
-import type { HydrationEntry, MoodEntry, MoodState } from './utils/wellness';
+import {
+  consumeHerCareWidgetLaunchAction,
+  consumeHerCareWidgetPendingQuickActions,
+  syncHerCareWidgetSnapshot,
+  type WidgetLaunchTarget,
+} from './utils/widget';
+import {
+  createHydrationEntry,
+  getCurrentHydrationCount,
+  getLatestMoodEntry,
+  moodLabels,
+  type HydrationEntry,
+  type MoodEntry,
+  type MoodState,
+} from './utils/wellness';
 
 type AppState = 'splash' | 'welcome' | 'setup' | 'login' | 'main' | 'partner_link' | 'partner_dashboard' | 'partner_settings';
 type AppTab =
@@ -86,6 +100,57 @@ type AppTab =
 
 const SUPPORTS_PARTNER_FEATURES = APP_VARIANT_CONFIG.features.partnerConnections;
 const SHOW_SUPPORT_TAB = APP_VARIANT_CONFIG.features.personalSupportTab;
+
+function getWidgetSupportText(
+  hydrationCount: number,
+  hydrationGoal: number,
+  completedMeals: number,
+  mealGoal: number,
+  mood: MoodState,
+  latestSleepLog: SleepLogEntry | null,
+) {
+  if (hydrationCount < Math.max(3, Math.ceil(hydrationGoal / 2))) {
+    return `Water is at ${hydrationCount}/${hydrationGoal}. Open Hydration for a quick catch-up.`;
+  }
+
+  if (completedMeals === 0) {
+    return 'No meals logged yet today. Open Meals and lock in something simple.';
+  }
+
+  if (completedMeals < mealGoal) {
+    return `${completedMeals}/${mealGoal} meals are checked in. Keep one easy bite nearby.`;
+  }
+
+  if (mood === 'tired') {
+    return 'Mood is running tired. Open Mood or Sleep when you need a reset.';
+  }
+
+  if (latestSleepLog?.quality === 'poor') {
+    return 'Last sleep looked rough. Protect the next rest window when you can.';
+  }
+
+  return 'Tap the lane you need and get back to your shift faster.';
+}
+
+function mapWidgetTargetToTab(target: WidgetLaunchTarget): AppTab {
+  switch (target) {
+    case 'hydration':
+      return 'hydration_screen';
+    case 'meals':
+      return 'meals';
+    case 'mood':
+      return 'mood_check';
+    case 'sleep':
+      return 'sleep_log';
+    case 'shift':
+      return 'shift';
+    case 'notes':
+      return 'notes';
+    case 'home':
+    default:
+      return 'home';
+  }
+}
 
 function App() {
   const { dayKey, referenceDate } = useCurrentDayKey();
@@ -113,11 +178,11 @@ function App() {
   );
   const [shiftPreference] = useLocalStorage<ShiftType>('hercare_shift_preference', 'Night Duty');
   const [waterGoal] = useLocalStorage('hercare_water_target', 8);
-  const [storedGlasses] = useLocalStorage('hercare_hydration_count', 0);
-  const [hydrationHistory] = useLocalStorage<HydrationEntry[]>('hercare_hydration_history', []);
+  const [storedGlasses, setStoredGlasses] = useLocalStorage('hercare_hydration_count', 0);
+  const [hydrationHistory, setHydrationHistory] = useLocalStorage<HydrationEntry[]>('hercare_hydration_history', []);
   const [currentMood] = useLocalStorage<MoodState>('hercare_mood', 'good');
   const [moodEntries] = useLocalStorage<MoodEntry[]>('hercare_mood_entries', []);
-  const [mealEntries] = useLocalStorage<MealEntry[]>('hercare_meal_entries', getInitialMealEntries());
+  const [mealEntries, setMealEntries] = useLocalStorage<MealEntry[]>('hercare_meal_entries', getInitialMealEntries());
   const [sleepLogs] = useLocalStorage<SleepLogEntry[]>('hercare_sleep_logs', []);
   const [sleepTargetHours] = useLocalStorage('hercare_sleep_target_hours', 7.5);
   const [scheduledShifts] = useLocalStorage<ShiftEntry[]>('hercare_scheduled_shifts', []);
@@ -135,6 +200,7 @@ function App() {
         : 'splash',
   );
   const [activeTab, setActiveTab] = useState<AppTab>('home');
+  const [pendingWidgetTarget, setPendingWidgetTarget] = useState<WidgetLaunchTarget | null>(null);
   const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
   const [selectedOpenWhenId, setSelectedOpenWhenId] = useState<string | null>(null);
   const [noteEditorCategory, setNoteEditorCategory] = useState<NoteCategory | null>(null);
@@ -142,6 +208,25 @@ function App() {
   const hasCheckedForAppUpdateRef = useRef(false);
   const lastSeenPartnerNudgeKeyRef = useRef(lastSeenPartnerNudgeKey);
   const latestSleepLog = getLatestSleepLog(sleepLogs);
+  const latestMoodEntry = getLatestMoodEntry(moodEntries);
+  const displayedMood = latestMoodEntry?.mood ?? currentMood;
+  const hydrationCount = getCurrentHydrationCount(hydrationHistory, storedGlasses, referenceDate);
+  const mealProgress = getMealProgress(mealEntries, referenceDate);
+  const breakfastLogged = mealProgress.completedTypes.includes('Breakfast');
+  const lunchLogged = mealProgress.completedTypes.includes('Lunch');
+  const dinnerLogged = mealProgress.completedTypes.includes('Dinner');
+  const snackLogged = mealProgress.completedTypes.includes('Snack');
+  const widgetSleepLabel = latestSleepLog
+    ? formatDuration(latestSleepLog.durationMinutes)
+    : `Goal ${formatTargetHours(sleepTargetHours)}`;
+  const widgetSupportText = getWidgetSupportText(
+    hydrationCount,
+    waterGoal,
+    mealProgress.completedCount,
+    mealProgress.goalCount,
+    displayedMood,
+    latestSleepLog,
+  );
   const studyAlertsAllowed = notificationsEnabled && studyAlertsEnabled;
 
   useEffect(() => {
@@ -179,6 +264,111 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const readWidgetLaunchAction = async () => {
+      const target = await consumeHerCareWidgetLaunchAction();
+
+      if (isCancelled || !target) {
+        return;
+      }
+
+      setPendingWidgetTarget(target);
+
+      if (hasCompletedSetup && isLoggedIn) {
+        setAppState('main');
+      }
+    };
+
+    const handleForeground = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        void readWidgetLaunchAction();
+      }
+    };
+
+    void readWidgetLaunchAction();
+    window.addEventListener('focus', handleForeground);
+    document.addEventListener('visibilitychange', handleForeground);
+
+    return () => {
+      isCancelled = true;
+      window.removeEventListener('focus', handleForeground);
+      document.removeEventListener('visibilitychange', handleForeground);
+    };
+  }, [hasCompletedSetup, isLoggedIn]);
+
+  useEffect(() => {
+    if (!hasCompletedSetup || !isLoggedIn) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const applyPendingWidgetActions = async () => {
+      const actions = await consumeHerCareWidgetPendingQuickActions();
+
+      if (isCancelled || actions.length === 0) {
+        return;
+      }
+
+      const hydrationEntriesFromWidget = actions
+        .filter((action) => action.kind === 'hydration')
+        .map((action) => createHydrationEntry(action.amount, new Date(action.loggedAtMillis)))
+        .sort((left, right) => right.loggedAt.localeCompare(left.loggedAt));
+      const mealEntriesFromWidget = actions
+        .filter((action) => action.kind === 'meal')
+        .map((action) => createQuickMealEntry(action.mealType, new Date(action.loggedAtMillis)));
+      const hydrationAdded = actions
+        .filter((action) => action.kind === 'hydration')
+        .reduce((total, action) => total + action.amount, 0);
+
+      if (hydrationEntriesFromWidget.length > 0) {
+        setHydrationHistory((currentEntries) =>
+          [...hydrationEntriesFromWidget, ...currentEntries].sort((left, right) => right.loggedAt.localeCompare(left.loggedAt)),
+        );
+        setStoredGlasses((currentValue) => currentValue + hydrationAdded);
+      }
+
+      if (mealEntriesFromWidget.length > 0) {
+        setMealEntries((currentEntries) => sortMealEntries([...mealEntriesFromWidget, ...currentEntries]));
+      }
+    };
+
+    const handleForegroundSync = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        void applyPendingWidgetActions();
+      }
+    };
+
+    void applyPendingWidgetActions();
+    window.addEventListener('focus', handleForegroundSync);
+    document.addEventListener('visibilitychange', handleForegroundSync);
+
+    return () => {
+      isCancelled = true;
+      window.removeEventListener('focus', handleForegroundSync);
+      document.removeEventListener('visibilitychange', handleForegroundSync);
+    };
+  }, [hasCompletedSetup, isLoggedIn]);
+
+  useEffect(() => {
+    if (!pendingWidgetTarget || appState === 'main' || !hasCompletedSetup || !isLoggedIn) {
+      return;
+    }
+
+    setAppState('main');
+  }, [appState, hasCompletedSetup, isLoggedIn, pendingWidgetTarget]);
+
+  useEffect(() => {
+    if (!pendingWidgetTarget || appState !== 'main') {
+      return;
+    }
+
+    setActiveTab(mapWidgetTargetToTab(pendingWidgetTarget));
+    setPendingWidgetTarget(null);
+  }, [appState, pendingWidgetTarget]);
 
   useEffect(() => {
     if (appState !== 'main' || hasCheckedForAppUpdateRef.current) {
@@ -315,6 +505,42 @@ function App() {
       sleepTargetHours,
     });
   }, [appState, latestSleepLog, notificationsEnabled, sleepTargetHours]);
+
+  useEffect(() => {
+    if (appState !== 'main' || !hasCompletedSetup || !isLoggedIn) {
+      return;
+    }
+
+    void syncHerCareWidgetSnapshot({
+      trackingDayKey: dayKey,
+      hydrationCurrent: hydrationCount,
+      hydrationGoal: waterGoal,
+      mealGoal: mealProgress.goalCount,
+      breakfastLogged,
+      lunchLogged,
+      dinnerLogged,
+      snackLogged,
+      moodText: moodLabels[displayedMood],
+      sleepText: widgetSleepLabel,
+      supportText: widgetSupportText,
+    });
+  }, [
+    appState,
+    breakfastLogged,
+    dayKey,
+    dinnerLogged,
+    displayedMood,
+    hasCompletedSetup,
+    hydrationCount,
+    isLoggedIn,
+    lunchLogged,
+    mealProgress.completedCount,
+    mealProgress.goalCount,
+    snackLogged,
+    waterGoal,
+    widgetSleepLabel,
+    widgetSupportText,
+  ]);
 
   useEffect(() => {
     if (!SUPPORTS_PARTNER_FEATURES || appState !== 'main' || !partnerSharingEnabled || !partnerShareCode) {

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#163846</color>
+    <color name="colorPrimaryDark">#0B1A24</color>
+    <color name="colorAccent">#C95E43</color>
+
+    <color name="widget_surface_start">#0D1D27</color>
+    <color name="widget_surface_mid">#15333E</color>
+    <color name="widget_surface_end">#1D4550</color>
+    <color name="widget_outline">#4A6B70</color>
+    <color name="widget_chip">#2A4450</color>
+    <color name="widget_chip_outline">#5C7A7F</color>
+    <color name="widget_pill_primary">#C95E43</color>
+    <color name="widget_pill_secondary">#24404A</color>
+    <color name="widget_pill_secondary_outline">#5C7A7F</color>
+    <color name="widget_text">#F7F1E7</color>
+    <color name="widget_muted">#D3D7D2</color>
+    <color name="widget_label">#9ED8CC</color>
+</resources>
