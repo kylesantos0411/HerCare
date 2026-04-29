@@ -76,7 +76,7 @@ npm run apk:release
 
 The shareable APK is generated at:
 
-`android/app/build/outputs/apk/release/HerCare-v1.0.5-release.apk`
+`android/app/build/outputs/apk/release/HerCare-v1.0.6-release.apk`
 
 ### 6. Build the signed Android App Bundle
 
@@ -86,7 +86,7 @@ npm run aab:release
 
 The Play Store bundle is generated at:
 
-`android/app/build/outputs/bundle/release/HerCare-v1.0.5-release.aab`
+`android/app/build/outputs/bundle/release/HerCare-v1.0.6-release.aab`
 
 ## Firebase Notes
 
