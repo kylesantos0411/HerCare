@@ -37,6 +37,10 @@ function getManagedNotificationDescriptors() {
   return CARE_MANAGED_IDS.map((id) => ({ id }));
 }
 
+function getNotificationDescriptors(ids: number[]) {
+  return ids.map((id) => ({ id }));
+}
+
 function getStorageItem(key: string) {
   if (typeof window === 'undefined') {
     return null;
@@ -150,16 +154,32 @@ async function clearManagedNotifications() {
     notifications: getManagedNotificationDescriptors(),
   });
 
+  await clearDeliveredNotificationsById(CARE_MANAGED_IDS);
+}
+
+async function clearDeliveredNotificationsById(ids: number[]) {
   const delivered = await LocalNotifications.getDeliveredNotifications();
-  const managedDelivered = delivered.notifications.filter((notification) =>
-    CARE_MANAGED_IDS.includes(notification.id),
-  );
+  const managedDelivered = delivered.notifications.filter((notification) => ids.includes(notification.id));
 
   if (managedDelivered.length > 0) {
     await LocalNotifications.removeDeliveredNotifications({
       notifications: managedDelivered,
     });
   }
+}
+
+export async function clearScheduledCareNotifications() {
+  if (!isLocalNotificationsAvailable()) {
+    return;
+  }
+
+  await clearManagedNotifications();
+
+  await LocalNotifications.cancel({
+    notifications: getNotificationDescriptors([LOW_SLEEP_ALERT_ID]),
+  });
+
+  await clearDeliveredNotificationsById([LOW_SLEEP_ALERT_ID]);
 }
 
 function createDateAt(baseDate: Date, dayOffset: number, hour: number, minute: number) {
@@ -334,8 +354,9 @@ export async function syncLowSleepAlert(options: SyncSleepAlertOptions) {
   }
 
   await LocalNotifications.cancel({
-    notifications: [{ id: LOW_SLEEP_ALERT_ID }],
+    notifications: getNotificationDescriptors([LOW_SLEEP_ALERT_ID]),
   });
+  await clearDeliveredNotificationsById([LOW_SLEEP_ALERT_ID]);
 
   if (!options.notificationsEnabled) {
     return;

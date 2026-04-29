@@ -191,6 +191,9 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
   const status = shareDoc?.latestStatus ?? null;
   const mapsUrl = getMapsUrl(shareDoc?.latestLocation ?? null);
   const study = status?.study ?? null;
+  const studyEndsAtIso = study?.endsAtIso ?? null;
+  const studyStatus = study?.status ?? null;
+  const studyUpdatedAtIso = study?.updatedAtIso ?? null;
   const studyRemainingSeconds = getPartnerStudyRemainingSeconds(study, currentTime);
   const studyDisplayStatus = getPartnerStudyDisplayStatus(study, studyRemainingSeconds);
 
@@ -304,7 +307,7 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
   }, [configured, setLastSeenCheckIn, setLastSeenOwnerNudge, shareCode]);
 
   useEffect(() => {
-    if (!study || study.status !== 'running' || !study.endsAtIso) {
+    if (studyStatus !== 'running' || !studyEndsAtIso) {
       return;
     }
 
@@ -316,7 +319,7 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [study?.endsAtIso, study?.status, study?.updatedAtIso]);
+  }, [studyEndsAtIso, studyStatus, studyUpdatedAtIso]);
 
   const handleSendCareNudge = async (type: PartnerCareNudgeType) => {
     if (!shareDoc?.sharingEnabled) {
@@ -437,95 +440,80 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
           {activeTab === 'care_board' ? (
             <div className="partner-grid">
               <div className="partner-grid-primary">
-                <div className="partner-summary-grid">
-                  <Card className="partner-summary-card">
-                    <Droplet size={18} />
-                    <span>Hydration</span>
-                    <strong>{status ? `${status.hydration.current} / ${status.hydration.goal}` : '--'}</strong>
-                    <small>{status ? `Last water ${formatPartnerTimestamp(status.hydration.lastLoggedAt)}` : 'No sync yet'}</small>
-                    <button
-                      type="button"
-                      className="partner-summary-nudge-btn"
-                      onClick={() => void handleSendCareNudge('hydration')}
-                      disabled={!shareDoc.sharingEnabled || sendingNudgeType !== null}
-                    >
-                      <BellRing size={14} />
-                      {sendingNudgeType === 'hydration'
-                        ? 'Sending...'
-                        : getCareNudgeCopy('hydration', shareDoc, status).buttonLabel}
-                    </button>
-                    {nudgeFeedback?.type === 'hydration' && (
-                      <p className={`partner-summary-feedback ${nudgeFeedback.tone}`}>{nudgeFeedback.text}</p>
-                    )}
-                  </Card>
+                <Card className="partner-vitals-card">
+                  <div className="partner-vitals-heading">
+                    <div>
+                      <p className="partner-section-kicker">Today</p>
+                      <h3>Care signals</h3>
+                    </div>
+                    <span className={`partner-status-pill ${shareDoc.sharingEnabled ? 'live' : 'paused'}`}>
+                      {shareDoc.sharingEnabled ? 'Live' : 'Paused'}
+                    </span>
+                  </div>
 
-                  <Card className="partner-summary-card">
-                    <UtensilsCrossed size={18} />
-                    <span>Meals</span>
-                    <strong>{status ? `${status.meals.completedCount} / ${status.meals.goalCount}` : '--'}</strong>
-                    <small>
-                      {status
-                        ? status.meals.hasBreakfast
-                          ? 'Breakfast logged today'
-                          : 'Breakfast still missing today'
-                        : 'No sync yet'}
-                    </small>
-                    <button
-                      type="button"
-                      className="partner-summary-nudge-btn"
-                      onClick={() => void handleSendCareNudge('meals')}
-                      disabled={!shareDoc.sharingEnabled || sendingNudgeType !== null}
-                    >
-                      <BellRing size={14} />
-                      {sendingNudgeType === 'meals' ? 'Sending...' : getCareNudgeCopy('meals', shareDoc, status).buttonLabel}
-                    </button>
-                    {nudgeFeedback?.type === 'meals' && (
-                      <p className={`partner-summary-feedback ${nudgeFeedback.tone}`}>{nudgeFeedback.text}</p>
-                    )}
-                  </Card>
+                  <div className="partner-vitals-grid">
+                    <div className="partner-vital-item">
+                      <Droplet size={18} />
+                      <span>Hydration</span>
+                      <strong>{status ? `${status.hydration.current} / ${status.hydration.goal}` : '--'}</strong>
+                      <small>{status ? `Last water ${formatPartnerTimestamp(status.hydration.lastLoggedAt)}` : 'No sync yet'}</small>
+                    </div>
 
-                  <Card className="partner-summary-card">
-                    <Smile size={18} />
-                    <span>Mood</span>
-                    <strong>{status?.mood.label ?? 'No mood yet'}</strong>
-                    <small>
-                      {status?.mood.updatedAt ? `Checked ${formatPartnerTimestamp(status.mood.updatedAt)}` : 'No sync yet'}
-                    </small>
-                    <button
-                      type="button"
-                      className="partner-summary-nudge-btn"
-                      onClick={() => void handleSendCareNudge('mood')}
-                      disabled={!shareDoc.sharingEnabled || sendingNudgeType !== null}
-                    >
-                      <BellRing size={14} />
-                      {sendingNudgeType === 'mood' ? 'Sending...' : getCareNudgeCopy('mood', shareDoc, status).buttonLabel}
-                    </button>
-                    {nudgeFeedback?.type === 'mood' && (
-                      <p className={`partner-summary-feedback ${nudgeFeedback.tone}`}>{nudgeFeedback.text}</p>
-                    )}
-                  </Card>
+                    <div className="partner-vital-item">
+                      <UtensilsCrossed size={18} />
+                      <span>Meals</span>
+                      <strong>{status ? `${status.meals.completedCount} / ${status.meals.goalCount}` : '--'}</strong>
+                      <small>
+                        {status
+                          ? status.meals.hasBreakfast
+                            ? 'Breakfast logged today'
+                            : 'Breakfast still missing today'
+                          : 'No sync yet'}
+                      </small>
+                    </div>
 
-                  <Card className="partner-summary-card">
-                    <Moon size={18} />
-                    <span>Sleep</span>
-                    <strong>{status?.sleep.durationMinutes ? formatDuration(status.sleep.durationMinutes) : 'No log'}</strong>
-                    <small>
-                      {status ? `${status.sleep.qualityLabel} - goal ${formatTargetHours(status.sleep.targetHours)}` : 'No sync yet'}
-                    </small>
-                    <button
-                      type="button"
-                      className="partner-summary-nudge-btn"
-                      onClick={() => void handleSendCareNudge('sleep')}
-                      disabled={!shareDoc.sharingEnabled || sendingNudgeType !== null}
-                    >
-                      <BellRing size={14} />
-                      {sendingNudgeType === 'sleep' ? 'Sending...' : getCareNudgeCopy('sleep', shareDoc, status).buttonLabel}
-                    </button>
-                    {nudgeFeedback?.type === 'sleep' && (
-                      <p className={`partner-summary-feedback ${nudgeFeedback.tone}`}>{nudgeFeedback.text}</p>
-                    )}
-                  </Card>
-                </div>
+                    <div className="partner-vital-item">
+                      <Smile size={18} />
+                      <span>Mood</span>
+                      <strong>{status?.mood.label ?? 'No mood yet'}</strong>
+                      <small>
+                        {status?.mood.updatedAt ? `Checked ${formatPartnerTimestamp(status.mood.updatedAt)}` : 'No sync yet'}
+                      </small>
+                    </div>
+
+                    <div className="partner-vital-item">
+                      <Moon size={18} />
+                      <span>Sleep</span>
+                      <strong>{status?.sleep.durationMinutes ? formatDuration(status.sleep.durationMinutes) : 'No log'}</strong>
+                      <small>
+                        {status ? `${status.sleep.qualityLabel} - goal ${formatTargetHours(status.sleep.targetHours)}` : 'No sync yet'}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="partner-nudge-bar" aria-label="Send care nudges">
+                    {(['hydration', 'meals', 'mood', 'sleep'] as const).map((type) => {
+                      const copy = getCareNudgeCopy(type, shareDoc, status);
+
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          className="partner-nudge-btn"
+                          onClick={() => void handleSendCareNudge(type)}
+                          disabled={!shareDoc.sharingEnabled || sendingNudgeType !== null}
+                        >
+                          <BellRing size={14} />
+                          {sendingNudgeType === type ? 'Sending...' : copy.buttonLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {nudgeFeedback && (
+                    <p className={`partner-nudge-feedback ${nudgeFeedback.tone}`}>{nudgeFeedback.text}</p>
+                  )}
+                </Card>
 
                 <Card className="partner-detail-card">
                   <p className="partner-section-kicker">Shift</p>

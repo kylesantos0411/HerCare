@@ -283,21 +283,20 @@ body.night-shift-theme .quick-focus-presets span {
   color: var(--text-muted);
 }
 
-body.night-shift-theme .partner-support-panel {
+body.night-shift-theme .partner-care-rail {
   background:
     radial-gradient(circle at top right, rgba(157, 115, 136, 0.26), transparent 40%),
     linear-gradient(160deg, rgba(38, 29, 40, 0.98), rgba(29, 22, 32, 0.98));
   border-color: rgba(157, 115, 136, 0.2);
 }
 
-body.night-shift-theme .partner-support-metric,
-body.night-shift-theme .partner-support-nudge-btn {
+body.night-shift-theme .partner-care-nudge-btn {
   background-color: rgba(29, 22, 32, 0.86);
   border-color: rgba(157, 115, 136, 0.2);
 }
 
 body.night-shift-theme .partner-support-status.waiting,
-body.night-shift-theme .partner-support-nudge-btn {
+body.night-shift-theme .partner-care-nudge-btn {
   color: var(--color-accent);
 }
 
@@ -406,37 +405,37 @@ body.night-shift-theme .partner-support-nudge-btn {
   color: var(--danger);
 }
 
-.partner-support-panel {
+.partner-care-rail {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   padding: 16px;
-  border-radius: 22px;
+  border-radius: 20px;
   background:
     radial-gradient(circle at top right, rgba(227, 154, 182, 0.14), transparent 42%),
     linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(246, 233, 241, 0.9));
   border: 1px solid rgba(227, 154, 182, 0.12);
 }
 
-.partner-support-header {
+.partner-care-rail-header {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: flex-start;
 }
 
-.partner-support-copy {
+.partner-care-rail-copy {
   display: flex;
   gap: 12px;
   align-items: flex-start;
 }
 
-.partner-support-copy h4 {
+.partner-care-rail-copy h4 {
   font-size: 18px;
   margin-bottom: 4px;
 }
 
-.partner-support-copy p {
+.partner-care-rail-copy p {
   color: var(--text-muted);
   font-size: 13px;
 }
@@ -459,40 +458,15 @@ body.night-shift-theme .partner-support-nudge-btn {
   color: var(--color-primary);
 }
 
-.partner-support-metrics {
+.partner-care-nudge-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.partner-support-metric {
-  padding: 14px;
-  border-radius: 18px;
-  background-color: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(227, 154, 182, 0.12);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.partner-support-metric span,
-.partner-support-metric small {
-  color: var(--text-muted);
-}
-
-.partner-support-metric strong {
-  font-size: 20px;
-}
-
-.partner-support-nudge-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.partner-support-nudge-btn {
+.partner-care-nudge-btn {
   border: 1px solid rgba(227, 154, 182, 0.18);
-  border-radius: 16px;
+  border-radius: 14px;
   background-color: rgba(255, 255, 255, 0.82);
   color: var(--color-primary);
   font: inherit;
@@ -508,13 +482,13 @@ body.night-shift-theme .partner-support-nudge-btn {
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.partner-support-nudge-btn:hover:enabled {
+.partner-care-nudge-btn:hover:enabled {
   transform: translateY(-1px);
   border-color: rgba(227, 154, 182, 0.34);
   box-shadow: var(--shadow-card);
 }
 
-.partner-support-nudge-btn:disabled {
+.partner-care-nudge-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -531,42 +505,108 @@ body.night-shift-theme .partner-support-nudge-btn {
   color: var(--danger);
 }
 
-.wellness-snapshot h3 {
-  font-size: 18px;
+.home-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 12px;
+}
+
+.home-section-heading p {
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.home-section-heading h3 {
+  font-size: 18px;
   color: var(--text-main);
 }
 
-.snapshot-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.snapshot-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-}
-
-.snapshot-card svg {
-  opacity: 0.95;
-}
-
-.snapshot-card span {
+.home-section-heading button {
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font: inherit;
   font-size: 14px;
-  opacity: 0.9;
+  font-weight: 700;
+  padding: 0 0 4px;
 }
 
-.snapshot-card strong {
-  font-size: 16px;
-  font-weight: 600;
+.wellness-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 0;
+  padding: 14px;
 }
 
-.snapshot-card small {
-  font-size: 12px;
+.wellness-metric {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background-color: var(--bg-secondary);
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 12px;
+  text-align: left;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.wellness-metric:hover {
+  border-color: rgba(227, 154, 182, 0.26);
+  transform: translateY(-1px);
+}
+
+.wellness-metric-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.wellness-metric-icon.hydration {
+  background-color: rgba(176, 168, 227, 0.16);
+  color: #8178d4;
+}
+
+.wellness-metric-icon.mood {
+  background-color: rgba(244, 176, 200, 0.18);
+  color: var(--color-primary);
+}
+
+.wellness-metric-icon.sleep {
+  background-color: rgba(145, 184, 160, 0.16);
+  color: var(--color-secondary);
+}
+
+.wellness-metric-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wellness-metric-copy span,
+.wellness-metric-copy small {
   color: var(--text-muted);
+  font-size: 12px;
+}
+
+.wellness-metric-copy strong {
+  color: var(--text-main);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .insight-card {
@@ -635,10 +675,6 @@ body.night-shift-theme .partner-support-nudge-btn {
     grid-area: focus;
   }
 
-  body.app-variant-personal.app-main-shell .snapshot-cards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   body.app-variant-personal.app-main-shell .shift-card,
   body.app-variant-personal.app-main-shell .partner-quick-card,
   body.app-variant-personal.app-main-shell .quick-focus-card {
@@ -653,8 +689,7 @@ body.night-shift-theme .partner-support-nudge-btn {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   }
 
-  body.app-variant-personal.app-main-shell .partner-support-metrics,
-  body.app-variant-personal.app-main-shell .partner-support-nudge-grid {
+  body.app-variant-personal.app-main-shell .partner-care-nudge-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -677,15 +712,13 @@ body.night-shift-theme .partner-support-nudge-btn {
 }
 
 @media (max-width: 699px) {
-  .snapshot-cards,
   .partner-quick-actions,
-  .partner-support-metrics,
-  .partner-support-nudge-grid {
+  .partner-care-nudge-row {
     grid-template-columns: 1fr;
   }
 
   .partner-quick-header,
-  .partner-support-header,
+  .partner-care-rail-header,
   .quick-focus-header,
   .quick-focus-progress-copy {
     flex-direction: column;

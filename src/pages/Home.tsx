@@ -10,7 +10,6 @@ import {
   HeartHandshake,
   MapPinned,
   AlarmClock,
-  UtensilsCrossed,
 } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -279,6 +278,14 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
   const greetingName = name.trim();
   const partnerConnected = Boolean(partnerShareDoc?.partnerUid);
   const partnerCareStatus = partnerShareDoc?.latestPartnerCareStatus ?? null;
+  const partnerSleepSummary = partnerCareStatus?.sleep.durationMinutes
+    ? formatDuration(partnerCareStatus.sleep.durationMinutes)
+    : 'No sleep log';
+  const partnerCareSummary = partnerCareStatus
+    ? `Water ${partnerCareStatus.hydration.current}/${partnerCareStatus.hydration.goal} | Meals ${partnerCareStatus.meals.completedCount}/${partnerCareStatus.meals.goalCount} | Sleep ${partnerSleepSummary}`
+    : partnerConnected
+      ? 'Waiting for the first self-care sync.'
+      : 'Waiting for the partner phone to connect.';
 
   useEffect(() => {
     if (!showPartnerTools || !partnerShareCode) {
@@ -483,31 +490,54 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
         </Card>
       </section>
 
-      <div className="wellness-snapshot">
-        <h3>Today's Wellness</h3>
-        <div className="snapshot-cards">
-          <Card variant="secondary" className="snapshot-card">
-            <Droplet size={20} />
-            <span>Hydration</span>
-            <strong>
-              {glasses} / {waterGoal} {hydrationLabel}
-            </strong>
-            <small>{hydrationContext}</small>
-          </Card>
-
-          <Card variant="accent" className="snapshot-card">
-            <Smile size={20} />
-            <span>Mood</span>
-            <strong>{moodLabels[displayedMood]}</strong>
-          </Card>
-
-          <Card className="snapshot-card">
-            <Moon size={20} color="var(--color-primary)" />
-            <span>Sleep</span>
-            <strong>{sleepSummary}</strong>
-          </Card>
+      <section className="wellness-snapshot">
+        <div className="home-section-heading">
+          <div>
+            <p>Daily signals</p>
+            <h3>Today's Wellness</h3>
+          </div>
+          <button type="button" onClick={() => onNavigate('wellness')}>
+            Open
+          </button>
         </div>
-      </div>
+
+        <Card className="wellness-panel">
+          <button type="button" className="wellness-metric" onClick={() => onNavigate('hydration_screen')}>
+            <span className="wellness-metric-icon hydration">
+              <Droplet size={18} />
+            </span>
+            <span className="wellness-metric-copy">
+              <span>Hydration</span>
+              <strong>
+                {glasses} / {waterGoal} {hydrationLabel}
+              </strong>
+              <small>{hydrationContext}</small>
+            </span>
+          </button>
+
+          <button type="button" className="wellness-metric" onClick={() => onNavigate('mood_check')}>
+            <span className="wellness-metric-icon mood">
+              <Smile size={18} />
+            </span>
+            <span className="wellness-metric-copy">
+              <span>Mood</span>
+              <strong>{moodLabels[displayedMood]}</strong>
+              <small>Tap to update how you feel.</small>
+            </span>
+          </button>
+
+          <button type="button" className="wellness-metric" onClick={() => onNavigate('sleep_log')}>
+            <span className="wellness-metric-icon sleep">
+              <Moon size={18} />
+            </span>
+            <span className="wellness-metric-copy">
+              <span>Sleep</span>
+              <strong>{sleepSummary}</strong>
+              <small>{latestSleepLog ? 'Latest rest log' : 'No sleep logged yet'}</small>
+            </span>
+          </button>
+        </Card>
+      </section>
 
       <div className="insight-section">
         <Card className="insight-card">
@@ -579,22 +609,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
               </Button>
             </div>
 
-            <div className="partner-support-panel">
-              <div className="partner-support-header">
-                <div className="partner-support-copy">
+            <div className="partner-care-rail">
+              <div className="partner-care-rail-header">
+                <div className="partner-care-rail-copy">
                   <BellRing size={18} />
                   <div>
                     <h4>{partnerShareDoc?.partnerName ? `${partnerShareDoc.partnerName}'s self-care` : 'Partner self-care'}</h4>
-                    <p>
-                      {partnerConnected
-                        ? partnerCareStatus
-                          ? `Last synced ${new Date(partnerCareStatus.updatedAtIso).toLocaleTimeString([], {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}`
-                          : 'Waiting for the first hydration, meal, or sleep log.'
-                        : 'The partner phone can log water, meals, and sleep after it connects.'}
-                    </p>
+                    <p>{partnerCareSummary}</p>
                   </div>
                 </div>
                 <span className={`partner-support-status ${partnerConnected ? 'connected' : 'waiting'}`}>
@@ -602,53 +623,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
                 </span>
               </div>
 
-              <div className="partner-support-metrics">
-                <div className="partner-support-metric">
-                  <Droplet size={16} />
-                  <span>Water</span>
-                  <strong>{partnerCareStatus ? `${partnerCareStatus.hydration.current}/${partnerCareStatus.hydration.goal}` : '--'}</strong>
-                  <small>
-                    {partnerCareStatus?.hydration.lastLoggedAt
-                      ? `Last ${new Date(partnerCareStatus.hydration.lastLoggedAt).toLocaleTimeString([], {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}`
-                      : 'No water log yet'}
-                  </small>
-                </div>
-
-                <div className="partner-support-metric">
-                  <UtensilsCrossed size={16} />
-                  <span>Meals</span>
-                  <strong>
-                    {partnerCareStatus
-                      ? `${partnerCareStatus.meals.completedCount}/${partnerCareStatus.meals.goalCount}`
-                      : '--'}
-                  </strong>
-                  <small>
-                    {partnerCareStatus
-                      ? partnerCareStatus.meals.hasBreakfast
-                        ? 'Breakfast logged'
-                        : 'Breakfast missing'
-                      : 'No meal log yet'}
-                  </small>
-                </div>
-
-                <div className="partner-support-metric">
-                  <Moon size={16} />
-                  <span>Sleep</span>
-                  <strong>
-                    {partnerCareStatus?.sleep.durationMinutes
-                      ? formatDuration(partnerCareStatus.sleep.durationMinutes)
-                      : 'No log'}
-                  </strong>
-                  <small>
-                    {partnerCareStatus ? partnerCareStatus.sleep.qualityLabel : 'No sleep log yet'}
-                  </small>
-                </div>
-              </div>
-
-              <div className="partner-support-nudge-grid">
+              <div className="partner-care-nudge-row">
                 {(['hydration', 'meals', 'sleep'] as const).map((type) => {
                   const copy = getPartnerSupportNudgeCopy(type, greetingName || name || 'your person', partnerCareStatus);
 
@@ -656,7 +631,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, studyTimer, showPartnerT
                     <button
                       key={type}
                       type="button"
-                      className="partner-support-nudge-btn"
+                      className="partner-care-nudge-btn"
                       onClick={() => void handleSendPartnerNudge(type)}
                       disabled={!partnerConnected || sendingPartnerNudgeType !== null}
                     >

@@ -30,7 +30,11 @@ import { useCurrentDayKey } from './hooks/useCurrentDayKey';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { APP_VERSION } from './utils/appInfo';
 import { fetchLatestAppUpdate, hasNewerAppUpdate, openAppUpdatePage, type AppUpdateInfo } from './utils/appUpdate';
-import { syncLowSleepAlert, syncScheduledCareNotifications } from './utils/careNotifications';
+import {
+  clearScheduledCareNotifications,
+  syncLowSleepAlert,
+  syncScheduledCareNotifications,
+} from './utils/careNotifications';
 import { createQuickMealEntry, getInitialMealEntries, getMealProgress, sortMealEntries, type MealEntry } from './utils/meals';
 import type { NoteCategory } from './utils/notes';
 import {
@@ -463,10 +467,14 @@ function App() {
     lastHandledStudyCompletionAtRef.current = studyTimer.completedAt;
     void clearStudyCompletionNotification();
 
+    if (appState !== 'main') {
+      return;
+    }
+
     if (isDocumentVisible) {
       void triggerStudyCompletionFeedback(studyAlertsAllowed);
     }
-  }, [isDocumentVisible, studyAlertsAllowed, studyTimer.completedAt, studyTimer.status]);
+  }, [appState, isDocumentVisible, studyAlertsAllowed, studyTimer.completedAt, studyTimer.status]);
 
   useEffect(() => {
     if (appState !== 'main') {
@@ -496,6 +504,7 @@ function App() {
 
   useEffect(() => {
     if (appState !== 'main') {
+      void clearScheduledCareNotifications();
       return;
     }
 
