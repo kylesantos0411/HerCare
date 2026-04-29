@@ -232,6 +232,24 @@ function App() {
     latestSleepLog,
   );
   const studyAlertsAllowed = notificationsEnabled && studyAlertsEnabled;
+  const canShowAppUpdatePrompt =
+    appState === 'main' ||
+    (SUPPORTS_PARTNER_FEATURES &&
+      (appState === 'partner_link' || appState === 'partner_dashboard' || appState === 'partner_settings'));
+
+  const renderAppUpdatePrompt = () => {
+    if (!canShowAppUpdatePrompt || !availableAppUpdate) {
+      return null;
+    }
+
+    return (
+      <AppUpdatePrompt
+        update={availableAppUpdate}
+        onLater={handleDismissAppUpdate}
+        onOpenUpdate={handleOpenAppUpdate}
+      />
+    );
+  };
 
   useEffect(() => {
     lastSeenPartnerNudgeKeyRef.current = lastSeenPartnerNudgeKey;
@@ -375,7 +393,7 @@ function App() {
   }, [appState, pendingWidgetTarget]);
 
   useEffect(() => {
-    if (appState !== 'main' || hasCheckedForAppUpdateRef.current) {
+    if (!canShowAppUpdatePrompt || hasCheckedForAppUpdateRef.current) {
       return;
     }
 
@@ -403,7 +421,7 @@ function App() {
     return () => {
       abortController.abort();
     };
-  }, [appState, dismissedUpdateVersion]);
+  }, [canShowAppUpdatePrompt, dismissedUpdateVersion]);
 
   useEffect(() => {
     if (studyTimer.status !== 'running' || !studyTimer.endsAt) {
@@ -1028,51 +1046,60 @@ function App() {
 
   if (SUPPORTS_PARTNER_FEATURES && appState === 'partner_link') {
     return (
-      <div className="view-container">
-        <PartnerLink
-          onBack={() => setAppState('welcome')}
-          onConnected={(shareCode) => {
-            setPartnerViewerEnabled(true);
-            setPartnerViewCode(shareCode);
-            setAppState('partner_dashboard');
-          }}
-        />
-      </div>
+      <>
+        <div className="view-container">
+          <PartnerLink
+            onBack={() => setAppState('welcome')}
+            onConnected={(shareCode) => {
+              setPartnerViewerEnabled(true);
+              setPartnerViewCode(shareCode);
+              setAppState('partner_dashboard');
+            }}
+          />
+        </div>
+        {renderAppUpdatePrompt()}
+      </>
     );
   }
 
   if (SUPPORTS_PARTNER_FEATURES && appState === 'partner_dashboard') {
     return (
-      <div className="view-container">
-        <PartnerView
-          shareCode={partnerViewCode}
-          onBack={() => setAppState('welcome')}
-          onOpenSettings={() => setAppState('partner_settings')}
-          onDisconnect={() => {
-            setPartnerViewerEnabled(false);
-            setPartnerViewCode('');
-            setAppState('welcome');
-          }}
-        />
-      </div>
+      <>
+        <div className="view-container">
+          <PartnerView
+            shareCode={partnerViewCode}
+            onBack={() => setAppState('welcome')}
+            onOpenSettings={() => setAppState('partner_settings')}
+            onDisconnect={() => {
+              setPartnerViewerEnabled(false);
+              setPartnerViewCode('');
+              setAppState('welcome');
+            }}
+          />
+        </div>
+        {renderAppUpdatePrompt()}
+      </>
     );
   }
 
   if (SUPPORTS_PARTNER_FEATURES && appState === 'partner_settings') {
     return (
-      <div className="view-container">
-        <PartnerSettings
-          shareCode={partnerViewCode}
-          darkModeEnabled={partnerDarkModeEnabled}
-          onDarkModeChange={setPartnerDarkModeEnabled}
-          onBack={() => setAppState('partner_dashboard')}
-          onDisconnect={() => {
-            setPartnerViewerEnabled(false);
-            setPartnerViewCode('');
-            setAppState('welcome');
-          }}
-        />
-      </div>
+      <>
+        <div className="view-container">
+          <PartnerSettings
+            shareCode={partnerViewCode}
+            darkModeEnabled={partnerDarkModeEnabled}
+            onDarkModeChange={setPartnerDarkModeEnabled}
+            onBack={() => setAppState('partner_dashboard')}
+            onDisconnect={() => {
+              setPartnerViewerEnabled(false);
+              setPartnerViewCode('');
+              setAppState('welcome');
+            }}
+          />
+        </div>
+        {renderAppUpdatePrompt()}
+      </>
     );
   }
 
@@ -1085,13 +1112,7 @@ function App() {
 
       {!hideBottomNav && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} showSupportTab={SHOW_SUPPORT_TAB} />}
 
-      {appState === 'main' && availableAppUpdate && (
-        <AppUpdatePrompt
-          update={availableAppUpdate}
-          onLater={handleDismissAppUpdate}
-          onOpenUpdate={handleOpenAppUpdate}
-        />
-      )}
+      {renderAppUpdatePrompt()}
     </>
   );
 }
