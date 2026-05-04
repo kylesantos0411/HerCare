@@ -37,6 +37,12 @@
     <string name="partner_alerts_channel_description">Check-ins, updates, and gentle nudges from HerCare.</string>
     <string name="partner_reminder_channel_name">Partner care reminders</string>
     <string name="partner_reminder_channel_description">Full-screen care reminders sent from the paired partner phone.</string>
+    <string name="partner_reminder_service_channel_name">Partner reminder service</string>
+    <string name="partner_reminder_service_channel_description">Keeps paired partner reminders available in the background.</string>
+    <string name="partner_reminder_service_title">HerCare background reminders</string>
+    <string name="partner_reminder_service_text">Watching the %1$s side for share code %2$s.</string>
+    <string name="partner_reminder_service_role_owner">main</string>
+    <string name="partner_reminder_service_role_partner">partner view</string>
     <string name="partner_reminder_kicker">Partner care reminder</string>
     <string name="partner_reminder_default_title">Drink water for a minute</string>
     <string name="partner_reminder_default_message">Take a short care break, then come back when you are ready.</string>

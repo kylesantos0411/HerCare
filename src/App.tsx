@@ -41,13 +41,9 @@ import {
   buildPartnerStatusSnapshot,
   subscribeToPartnerShare,
   syncPartnerStatus,
-  updatePartnerPushSubscription,
 } from './utils/partner';
 import { showPartnerActivityAlert } from './utils/partnerAlerts';
-import {
-  registerPartnerPushNotifications,
-  unregisterPartnerPushNotifications,
-} from './utils/partnerPush';
+import { canUseBackgroundPartnerReminderService, syncPartnerReminderService } from './utils/partnerReminderService';
 import { formatDuration, formatTargetHours, getLatestSleepLog, type SleepLogEntry } from './utils/sleep';
 import {
   completeStudyTimer,
@@ -167,15 +163,19 @@ function App() {
   const [name] = useLocalStorage('hercare_user_name', APP_VARIANT_CONFIG.defaultUserName);
   const [partnerShareCode] = useLocalStorage('hercare_partner_share_code', '');
   const [partnerSharingEnabled] = useLocalStorage('hercare_partner_sharing_enabled', false);
+  const [ownerAlertsEnabled] = useLocalStorage('hercare_owner_partner_alerts_enabled', true);
+  const [, setOwnerPushStatus] = useLocalStorage(
+    'hercare_owner_push_status',
+    'Partner reminders will be ready after a share code is active.',
+  );
   const [partnerViewerEnabled, setPartnerViewerEnabled] = useLocalStorage('hercare_partner_view_enabled', false);
   const [partnerViewCode, setPartnerViewCode] = useLocalStorage('hercare_partner_view_code', '');
   const [partnerDarkModeEnabled, setPartnerDarkModeEnabled] = useLocalStorage('hercare_partner_dark_mode_enabled', true);
   const [partnerAlertsEnabled] = useLocalStorage('hercare_partner_checkin_alerts_enabled', true);
   const [, setPartnerPushStatus] = useLocalStorage(
     'hercare_partner_push_status',
-    'Push alerts will be ready after this phone connects.',
+    'Background reminders will be ready after this phone connects.',
   );
-  const [partnerPushShareCode, setPartnerPushShareCode] = useLocalStorage('hercare_partner_push_share_code', '');
   const [lastSeenPartnerNudgeKey, setLastSeenPartnerNudgeKey] = useLocalStorage(
     'hercare_last_seen_partner_nudge_key',
     '',
@@ -297,6 +297,16 @@ function App() {
         return;
       }
 
+      if (SUPPORTS_PARTNER_FEATURES && target === 'partner_dashboard' && partnerViewerEnabled && partnerViewCode) {
+        setAppState('partner_dashboard');
+        return;
+      }
+
+      if (SUPPORTS_PARTNER_FEATURES && target === 'partner_settings' && partnerViewerEnabled && partnerViewCode) {
+        setAppState('partner_settings');
+        return;
+      }
+
       setPendingWidgetTarget(target);
 
       if (hasCompletedSetup && isLoggedIn) {
@@ -319,7 +329,7 @@ function App() {
       window.removeEventListener('focus', handleForeground);
       document.removeEventListener('visibilitychange', handleForeground);
     };
-  }, [hasCompletedSetup, isLoggedIn]);
+  }, [hasCompletedSetup, isLoggedIn, partnerViewCode, partnerViewerEnabled]);
 
   useEffect(() => {
     if (!hasCompletedSetup || !isLoggedIn) {
@@ -585,12 +595,12 @@ function App() {
         legacyHydrationCount: storedGlasses,
         moodEntries,
         currentMood,
-      sleepLogs,
-      sleepTargetHours,
-      mealEntries,
-      shifts: scheduledShifts,
-      studyTimer,
-    });
+        sleepLogs,
+        sleepTargetHours,
+        mealEntries,
+        shifts: scheduledShifts,
+        studyTimer,
+      });
 
       try {
         await syncPartnerStatus({
@@ -685,6 +695,13 @@ function App() {
           return;
         }
 
+        if (
+          canUseBackgroundPartnerReminderService()
+          && (value.latestPartnerNudge.type === 'hydration' || value.latestPartnerNudge.type === 'meals')
+        ) {
+          return;
+        }
+
         void showPartnerActivityAlert(
           value.latestPartnerNudge.title,
           value.latestPartnerNudge.message,
@@ -721,113 +738,136 @@ function App() {
 
     let isCancelled = false;
 
-    const clearPartnerPush = async (shareCode: string) => {
-      if (!shareCode) {
-        return;
-      }
+    const syncBackgroundReminderService = async () => {
+      const backgroundServiceSupported = canUseBackgroundPartnerReminderService();
+      const partnerRoleActive = partnerViewerEnabled && !!partnerViewCode;
+      const ownerRoleActive = hasCompletedSetup && isLoggedIn && partnerSharingEnabled && !!partnerShareCode;
 
       try {
-        await updatePartnerPushSubscription({
-          shareCode,
-          pushToken: null,
-          alertsEnabled: false,
-          role: 'partner',
-        });
-      } catch {
-        // Best-effort cleanup only.
-      }
-    };
+        if (partnerRoleActive) {
+          if (!partnerAlertsEnabled) {
+            await syncPartnerReminderService({
+              enabled: false,
+              role: 'partner',
+              shareCode: partnerViewCode,
+            });
 
-    const syncPartnerPush = async () => {
-      if (!partnerViewerEnabled || !partnerViewCode) {
-        await clearPartnerPush(partnerPushShareCode);
+            if (!isCancelled) {
+              setPartnerPushStatus('Background reminders are paused on this phone.');
+            }
 
-        try {
-          await unregisterPartnerPushNotifications();
-        } catch {
-          // Ignore local unregister issues while disconnecting.
-        }
-
-        if (!isCancelled) {
-          setPartnerPushShareCode('');
-          setPartnerPushStatus('Push alerts are off on this phone until a partner code is connected.');
-        }
-
-        return;
-      }
-
-      if (!partnerAlertsEnabled) {
-        await clearPartnerPush(partnerPushShareCode || partnerViewCode);
-
-        try {
-          await unregisterPartnerPushNotifications();
-        } catch {
-          // Ignore local unregister issues while alerts are paused.
-        }
-
-        if (!isCancelled) {
-          setPartnerPushShareCode('');
-          setPartnerPushStatus('Push alerts are paused on this phone.');
-        }
-
-        return;
-      }
-
-      try {
-        const pushToken = await registerPartnerPushNotifications();
-
-        if (isCancelled) {
-          return;
-        }
-
-        if (!pushToken) {
-          setPartnerPushStatus('Push alerts work only inside the Android app.');
-          return;
-        }
-
-        if (partnerPushShareCode && partnerPushShareCode !== partnerViewCode) {
-          await clearPartnerPush(partnerPushShareCode);
-
-          if (isCancelled) {
             return;
           }
-        }
 
-        await updatePartnerPushSubscription({
-          shareCode: partnerViewCode,
-          pushToken,
-          alertsEnabled: true,
-          role: 'partner',
-        });
+          if (!backgroundServiceSupported) {
+            await syncPartnerReminderService({
+              enabled: false,
+              role: 'partner',
+              shareCode: partnerViewCode,
+            });
 
-        if (isCancelled) {
+            if (!isCancelled) {
+              setPartnerPushStatus('Background full-screen reminders work only in the installed Android app.');
+            }
+            return;
+          }
+
+          await syncPartnerReminderService({
+            enabled: true,
+            role: 'partner',
+            shareCode: partnerViewCode,
+          });
+
+          if (!isCancelled) {
+            setPartnerPushStatus('Background full-screen reminders are ready on this phone.');
+          }
+
           return;
         }
 
-        setPartnerPushShareCode(partnerViewCode);
-        setPartnerPushStatus('Background push alerts are ready on this phone.');
+        if (ownerRoleActive) {
+          if (!ownerAlertsEnabled) {
+            await syncPartnerReminderService({
+              enabled: false,
+              role: 'owner',
+              shareCode: partnerShareCode,
+            });
+
+            if (!isCancelled) {
+              setOwnerPushStatus('Partner reminders are paused on this phone.');
+            }
+
+            return;
+          }
+
+          if (!backgroundServiceSupported) {
+            await syncPartnerReminderService({
+              enabled: false,
+              role: 'owner',
+              shareCode: partnerShareCode,
+            });
+
+            if (!isCancelled) {
+              setOwnerPushStatus('Background full-screen reminders work only in the installed Android app.');
+            }
+            return;
+          }
+
+          await syncPartnerReminderService({
+            enabled: true,
+            role: 'owner',
+            shareCode: partnerShareCode,
+          });
+
+          if (!isCancelled) {
+            setOwnerPushStatus('Partner reminders are ready on this phone.');
+          }
+
+          return;
+        }
+
+        await syncPartnerReminderService({
+          enabled: false,
+          role: 'owner',
+          shareCode: partnerShareCode || partnerViewCode,
+        });
+
+        if (!isCancelled) {
+          setOwnerPushStatus('Partner reminders will be ready after a share code is active.');
+          setPartnerPushStatus('Background reminders will be ready after this phone connects.');
+        }
       } catch (caughtError) {
         if (isCancelled) {
           return;
         }
 
-        setPartnerPushStatus(
-          caughtError instanceof Error ? caughtError.message : 'Unable to prepare push alerts on this phone.',
-        );
+        const message =
+          caughtError instanceof Error ? caughtError.message : 'Unable to prepare background reminders on this phone.';
+
+        if (partnerRoleActive) {
+          setPartnerPushStatus(message);
+          return;
+        }
+
+        setOwnerPushStatus(message);
       }
     };
 
-    void syncPartnerPush();
+    void syncBackgroundReminderService();
 
     return () => {
       isCancelled = true;
     };
   }, [
+    hasCompletedSetup,
+    isLoggedIn,
+    ownerAlertsEnabled,
     partnerAlertsEnabled,
-    partnerPushShareCode,
+    partnerShareCode,
+    partnerSharingEnabled,
     partnerViewCode,
     partnerViewerEnabled,
-    setPartnerPushShareCode,
+    setOwnerPushStatus,
     setPartnerPushStatus,
   ]);
 

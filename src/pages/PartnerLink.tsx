@@ -3,7 +3,7 @@ import { ChevronLeft, HeartHandshake, Link2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { isFirebaseConfigured } from '../utils/firebase';
+import { isSupabaseConfigured } from '../utils/firebase';
 import { connectToPartnerShare, normalizeShareCode } from '../utils/partner';
 import './PartnerLink.css';
 
@@ -18,7 +18,7 @@ export const PartnerLink: React.FC<PartnerLinkProps> = ({ onBack, onConnected })
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const configured = isFirebaseConfigured();
+  const configured = isSupabaseConfigured();
 
   const handleConnect = async () => {
     setError('');
@@ -51,13 +51,13 @@ export const PartnerLink: React.FC<PartnerLinkProps> = ({ onBack, onConnected })
           <div className="partner-empty-icon">
             <HeartHandshake size={22} />
           </div>
-          <h3>Firebase setup still needed</h3>
+          <h3>Supabase setup still needed</h3>
           <p>
-            This feature is ready in the app, but it still needs your Firebase project keys in
+            This feature is ready in the app, but it still needs your Supabase project keys in
             <strong> `.env.local`</strong> before partner syncing can go online.
           </p>
           <p className="partner-note">
-            After that, enable Anonymous Auth and Cloud Firestore once in Firebase, then rebuild the app.
+            After that, enable anonymous auth in Supabase, rebuild the app, and reconnect the share code.
           </p>
         </Card>
       ) : (

@@ -32,8 +32,8 @@ HerCare is a soft, supportive care companion app built for a girlfriend who work
 - TypeScript
 - Vite
 - Capacitor Android
-- Firebase Auth + Firestore
-- Capacitor Local Notifications and Push Notifications
+- Supabase Auth + Postgres
+- Capacitor Local Notifications and Android background reminders
 
 ## Local Setup
 
@@ -45,15 +45,11 @@ npm install
 
 ### 2. Add environment variables
 
-Create a local `.env` file from [`.env.example`](.env.example) and fill in your Firebase web config:
+Create a local `.env.local` file from [`.env.example`](.env.example) and fill in your Supabase project values:
 
 ```env
-VITE_FIREBASE_API_KEY=your-firebase-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 ```
 
 ### 3. Run the web app
@@ -76,7 +72,7 @@ npm run apk:release
 
 The shareable APK is generated at:
 
-`android/app/build/outputs/apk/release/HerCare-v1.0.9-release.apk`
+`android/app/build/outputs/apk/release/HerCare-v1.1.0-release.apk`
 
 ### 6. Build the signed Android App Bundle
 
@@ -86,13 +82,15 @@ npm run aab:release
 
 The Play Store bundle is generated at:
 
-`android/app/build/outputs/bundle/release/HerCare-v1.0.9-release.aab`
+`android/app/build/outputs/bundle/release/HerCare-v1.1.0-release.aab`
 
-## Firebase Notes
+## Supabase Notes
 
-- Partner sharing depends on Firebase being configured correctly
-- [firebase.rules](firebase.rules) contains the Firestore rules used by the app
-- `android/app/google-services.json` is intentionally not committed and should stay local
+- Partner sharing depends on Supabase being configured correctly
+- Anonymous auth must be enabled in Supabase Auth
+- The Android full-screen reminder flow uses a background polling service against the Supabase REST API
+- `supabase/migrations/20260504225500_partner_reminder_poll.sql` contains the reminder polling RPC used by Android
+- `android/app/google-services.json` is only needed if you still want the legacy Firebase push path
 
 ## Useful Scripts
 
@@ -106,7 +104,7 @@ The Play Store bundle is generated at:
 - `npm run apk:simple:release` - build the signed HerCare Essentials release APK
 - `npm run aab:release` - build the signed release App Bundle
 - `npm run aab:simple:release` - build the signed HerCare Essentials release App Bundle
-- `npm run push:deploy` - deploy Firebase functions only
+- `npm run push:deploy` - deploy the legacy Firebase functions path only
 - `npm run lint` - run ESLint
 
 ## Variant Workspaces
@@ -128,7 +126,8 @@ src/
   pages/         App screens
   utils/         Domain logic for wellness, partner sync, study timer, and notifications
 android/         Capacitor Android project
-functions/       Firebase Cloud Functions
+functions/       Legacy Firebase Cloud Functions
+supabase/        Supabase SQL migrations for partner sync and reminders
 design/          Logo and supporting design assets
 variants/        Variant-specific workspaces and planning folders
 ```
@@ -139,6 +138,7 @@ variants/        Variant-specific workspaces and planning folders
 - Android study completion alerts with custom sound
 - Partner View live study countdown plus per-card partner nudges
 - Partner self-care logging with owner-to-partner nudges for water, meals, and sleep
+- Two-way full-screen Android reminders for hydration and meals using the Supabase background reminder service
 - Home flow ordered as:
   `Shift Planning -> Today's Wellness -> Smart Insight -> Quick Partner Check-In -> Quick Focus`
 

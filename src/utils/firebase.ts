@@ -1,89 +1,85 @@
 import { Capacitor } from '@capacitor/core';
-import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, signInAnonymously, type Auth, type User } from 'firebase/auth';
-import { getFirestore, initializeFirestore, type Firestore } from 'firebase/firestore';
+import { createClient, type Session, type SupabaseClient, type User } from '@supabase/supabase-js';
 
-interface FirebaseServices {
-  app: FirebaseApp;
-  auth: Auth;
-  db: Firestore;
+interface BackendServices {
+  supabase: SupabaseClient;
 }
 
-let cachedServices: FirebaseServices | null = null;
+let cachedServices: BackendServices | null = null;
 
 function hasConfigValue(value: string | undefined) {
   return typeof value === 'string' && value.trim().length > 0 && !value.includes('your-');
 }
 
 export function isFirebaseConfigured() {
-  return [
-    import.meta.env.VITE_FIREBASE_API_KEY,
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    import.meta.env.VITE_FIREBASE_APP_ID,
-  ].every(hasConfigValue);
+  return [import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY].every(hasConfigValue);
 }
 
-export function getFirebaseServices(): FirebaseServices | null {
+export const isSupabaseConfigured = isFirebaseConfigured;
+
+export function getSupabaseClient() {
   if (!isFirebaseConfigured()) {
     return null;
   }
 
   if (cachedServices) {
-    return cachedServices;
+    return cachedServices.supabase;
   }
 
-  const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY!,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN!,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID!,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET!,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID!,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID!,
-  };
+  const supabase = createClient(import.meta.env.VITE_SUPABASE_URL!, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+    global: {
+      headers: {
+        'x-hercare-platform': Capacitor.getPlatform(),
+      },
+    },
+  });
 
-  const app = getApps()[0] ?? initializeApp(firebaseConfig);
-  let db: Firestore;
-
-  if (Capacitor.isNativePlatform()) {
-    try {
-      db = initializeFirestore(app, {
-        experimentalAutoDetectLongPolling: true,
-      });
-    } catch {
-      db = getFirestore(app);
-    }
-  } else {
-    db = getFirestore(app);
-  }
-
-  cachedServices = {
-    app,
-    auth: getAuth(app),
-    db,
-  };
-
-  return cachedServices;
+  cachedServices = { supabase };
+  return supabase;
 }
 
-export async function ensureAnonymousSession() {
-  const services = getFirebaseServices();
+export async function ensureAnonymousSession(): Promise<{
+  supabase: SupabaseClient;
+  session: Session;
+  user: User;
+} | null> {
+  const supabase = getSupabaseClient();
 
-  if (!services) {
+  if (!supabase) {
     return null;
   }
 
-  let user: User | null = services.auth.currentUser;
+  const currentSessionResult = await supabase.auth.getSession();
 
-  if (!user) {
-    const credential = await signInAnonymously(services.auth);
-    user = credential.user;
+  if (currentSessionResult.error) {
+    throw currentSessionResult.error;
+  }
+
+  let session = currentSessionResult.data.session;
+
+  if (!session) {
+    const anonymousSignInResult = await supabase.auth.signInAnonymously();
+
+    if (anonymousSignInResult.error) {
+      throw anonymousSignInResult.error;
+    }
+
+    session = anonymousSignInResult.data.session;
+  }
+
+  if (!session?.user) {
+    throw new Error('Unable to start a secure partner session right now.');
   }
 
   return {
-    ...services,
-    user,
+    supabase,
+    session,
+    user: session.user,
   };
 }

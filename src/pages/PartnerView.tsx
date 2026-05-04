@@ -15,7 +15,8 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PartnerSelfCarePanel } from '../components/PartnerSelfCarePanel';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { isFirebaseConfigured } from '../utils/firebase';
+import { isSupabaseConfigured } from '../utils/firebase';
+import { canUseBackgroundPartnerReminderService } from '../utils/partnerReminderService';
 import {
   formatPartnerTimestamp,
   getMapsUrl,
@@ -187,7 +188,8 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
   const lastSeenOwnerNudgeRef = useRef(lastSeenOwnerNudge);
   const toastTimeoutRef = useRef<number | null>(null);
 
-  const configured = isFirebaseConfigured();
+  const configured = isSupabaseConfigured();
+  const backgroundReminderServiceAvailable = canUseBackgroundPartnerReminderService();
   const status = shareDoc?.latestStatus ?? null;
   const mapsUrl = getMapsUrl(shareDoc?.latestLocation ?? null);
   const study = status?.study ?? null;
@@ -268,10 +270,16 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
           } else if (latestOwnerNudgeAt !== lastSeenOwnerNudgeRef.current) {
             lastSeenOwnerNudgeRef.current = latestOwnerNudgeAt;
             setLastSeenOwnerNudge(latestOwnerNudgeAt);
-            nextToast = {
-              title: latestOwnerNudge.title,
-              message: latestOwnerNudge.message,
-            };
+
+            if (
+              !backgroundReminderServiceAvailable
+              || (latestOwnerNudge.type !== 'hydration' && latestOwnerNudge.type !== 'meals')
+            ) {
+              nextToast = {
+                title: latestOwnerNudge.title,
+                message: latestOwnerNudge.message,
+              };
+            }
           }
         }
 
@@ -304,7 +312,7 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
       isCancelled = true;
       stopListening?.();
     };
-  }, [configured, setLastSeenCheckIn, setLastSeenOwnerNudge, shareCode]);
+  }, [backgroundReminderServiceAvailable, configured, setLastSeenCheckIn, setLastSeenOwnerNudge, shareCode]);
 
   useEffect(() => {
     if (studyStatus !== 'running' || !studyEndsAtIso) {
@@ -388,8 +396,8 @@ export const PartnerView: React.FC<PartnerViewProps> = ({ shareCode, onBack, onD
           <div className="partner-empty-icon">
             <HeartHandshake size={22} />
           </div>
-          <h3>Firebase setup still needed</h3>
-          <p>Add your Firebase web config in <strong>`.env.local`</strong>, then rebuild the app to turn this on.</p>
+          <h3>Supabase setup still needed</h3>
+          <p>Add your Supabase project values in <strong>`.env.local`</strong>, then rebuild the app to turn this on.</p>
         </Card>
       ) : isLoading ? (
         <Card className="partner-empty-card">

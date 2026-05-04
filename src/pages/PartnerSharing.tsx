@@ -11,18 +11,16 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { getCurrentDeviceLocation } from '../utils/deviceLocation';
-import { isFirebaseConfigured } from '../utils/firebase';
+import { isSupabaseConfigured } from '../utils/firebase';
 import {
   createPartnerShare,
   formatPartnerTimestamp,
   sharePartnerLocationCheckIn,
   sendPartnerQuickCheckIn,
   subscribeToPartnerShare,
-  updatePartnerPushSubscription,
   updatePartnerSharingPreferences,
   type PartnerShareDocument,
 } from '../utils/partner';
-import { registerPartnerPushNotifications, unregisterPartnerPushNotifications } from '../utils/partnerPush';
 import './PartnerSharing.css';
 
 interface PartnerSharingProps {
@@ -48,7 +46,7 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
   const [sharingEnabled, setSharingEnabled] = useLocalStorage('hercare_partner_sharing_enabled', false);
   const [locationSharingEnabled, setLocationSharingEnabled] = useLocalStorage('hercare_partner_location_enabled', false);
   const [ownerAlertsEnabled, setOwnerAlertsEnabled] = useLocalStorage('hercare_owner_partner_alerts_enabled', true);
-  const [ownerPushStatus, setOwnerPushStatus] = useLocalStorage(
+  const [ownerPushStatus] = useLocalStorage(
     'hercare_owner_push_status',
     'Partner reminders will be ready after a share code is active.',
   );
@@ -58,7 +56,7 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
   const [error, setError] = useState('');
   const [busyAction, setBusyAction] = useState<'create' | 'copy' | 'checkin' | 'location' | 'toggle' | null>(null);
 
-  const configured = isFirebaseConfigured();
+  const configured = isSupabaseConfigured();
 
   useEffect(() => {
     if (!configured || !shareCode) {
@@ -99,68 +97,6 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
       stopListening?.();
     };
   }, [configured, shareCode]);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    const syncOwnerPushSubscription = async () => {
-      if (!configured || !shareCode || !sharingEnabled) {
-        setOwnerPushStatus('Partner reminders will be ready after a share code is active.');
-        return;
-      }
-
-      try {
-        if (!ownerAlertsEnabled) {
-          await unregisterPartnerPushNotifications();
-          await updatePartnerPushSubscription({
-            shareCode,
-            pushToken: null,
-            alertsEnabled: false,
-            role: 'owner',
-          });
-
-          if (!isCancelled) {
-            setOwnerPushStatus('Partner reminders are off on this phone.');
-          }
-
-          return;
-        }
-
-        if (!isCancelled) {
-          setOwnerPushStatus('Preparing partner reminders on this phone...');
-        }
-
-        const token = await registerPartnerPushNotifications();
-
-        if (!token) {
-          throw new Error('Push notifications are only available on the installed Android app.');
-        }
-
-        await updatePartnerPushSubscription({
-          shareCode,
-          pushToken: token,
-          alertsEnabled: true,
-          role: 'owner',
-        });
-
-        if (!isCancelled) {
-          setOwnerPushStatus('Partner reminders are ready on this phone.');
-        }
-      } catch (caughtError) {
-        if (!isCancelled) {
-          setOwnerPushStatus(
-            caughtError instanceof Error ? caughtError.message : 'Unable to prepare partner reminders right now.',
-          );
-        }
-      }
-    };
-
-    void syncOwnerPushSubscription();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [configured, ownerAlertsEnabled, setOwnerPushStatus, shareCode, sharingEnabled]);
 
   const handleCreateShare = async () => {
     setError('');
@@ -327,10 +263,10 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
           <div className="partner-empty-icon">
             <HeartHandshake size={22} />
           </div>
-          <h3>Firebase setup still needed</h3>
+          <h3>Supabase setup still needed</h3>
           <p>
-            Add your Firebase project values in <strong>`.env.local`</strong> and rebuild once. After that, this screen
-            will create share codes and sync live statuses.
+            Add your Supabase project values in <strong>`.env.local`</strong> and rebuild once. After that, this screen
+            will create share codes, sync live statuses, and prepare background reminders.
           </p>
         </Card>
       ) : (
@@ -387,7 +323,7 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
                 <BellRing size={18} />
                 <div>
                   <strong>Allow partner reminders</strong>
-                  <p>Receive hydration nudges and partner check-ins even when HerCare is closed.</p>
+                  <p>Run a background reminder service so hydration and meal nudges can appear over other apps.</p>
                 </div>
               </div>
               <label className="toggle-switch">

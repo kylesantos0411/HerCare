@@ -1,12 +1,5 @@
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  setDoc,
-  updateDoc,
-  type Unsubscribe,
-} from 'firebase/firestore';
-import { ensureAnonymousSession, isFirebaseConfigured } from './firebase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { ensureAnonymousSession, getSupabaseClient, isFirebaseConfigured } from './firebase';
 import {
   getMealProgress,
   getTodayMealEntries,
@@ -44,7 +37,7 @@ import {
   type MoodState,
 } from './wellness';
 
-const PARTNER_SHARE_COLLECTION = 'partnerShares';
+const PARTNER_SHARE_TABLE = 'partner_shares';
 const SHARE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const SHARE_CODE_LENGTH = 8;
 const PARTNER_POLL_INTERVAL_MS = 4000;
@@ -171,6 +164,30 @@ export interface PartnerShareDocument {
   updatedAtIso: string;
 }
 
+interface PartnerShareRow {
+  share_code: string;
+  owner_uid: string;
+  partner_uid: string | null;
+  owner_name: string;
+  partner_name: string;
+  sharing_enabled: boolean;
+  location_sharing_enabled: boolean;
+  owner_push_token: string | null;
+  owner_push_alerts_enabled: boolean;
+  owner_push_updated_at: string | null;
+  partner_push_token: string | null;
+  partner_push_alerts_enabled: boolean;
+  partner_push_updated_at: string | null;
+  latest_status: PartnerStatusSnapshot | null;
+  latest_partner_care_status: PartnerWellnessStatusSnapshot | null;
+  latest_check_in: PartnerQuickCheckIn | null;
+  latest_partner_nudge: PartnerGentleNudge | null;
+  latest_owner_nudge: PartnerGentleNudge | null;
+  latest_location: PartnerLocationCheckIn | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface BuildPartnerSnapshotOptions {
   dayKey: string;
   referenceDate: Date;
@@ -209,23 +226,52 @@ function createPartnerFriendlyError(error: unknown, fallbackMessage: string) {
     errorCode === 'unavailable' ||
     errorCode === 'deadline-exceeded' ||
     errorCode === 'cancelled' ||
-    errorCode === 'auth/network-request-failed' ||
-    errorMessage.includes('client is offline') ||
     errorMessage.includes('offline') ||
-    errorMessage.includes('network')
+    errorMessage.includes('network') ||
+    errorMessage.includes('fetch')
   ) {
     return new Error('This phone is offline right now. Reconnect to the internet and try again.');
   }
 
-  if (errorCode === 'unauthenticated') {
+  if (errorCode === 'unauthenticated' || errorCode === '401') {
     return new Error('Unable to start a secure partner session right now. Try again in a moment.');
   }
 
-  if (errorCode === 'not-found') {
+  if (errorCode === 'pgrst116' || errorCode === 'not-found') {
     return new Error('That share code is unavailable. Check the code and try again.');
   }
 
   return new Error(fallbackMessage);
+}
+
+function mapPartnerShareRow(row: PartnerShareRow | null): PartnerShareDocument | null {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    shareCode: row.share_code,
+    ownerUid: row.owner_uid,
+    partnerUid: row.partner_uid,
+    ownerName: row.owner_name,
+    partnerName: row.partner_name,
+    sharingEnabled: row.sharing_enabled,
+    locationSharingEnabled: row.location_sharing_enabled,
+    ownerPushToken: row.owner_push_token,
+    ownerPushAlertsEnabled: row.owner_push_alerts_enabled,
+    ownerPushUpdatedAtIso: row.owner_push_updated_at,
+    partnerPushToken: row.partner_push_token,
+    partnerPushAlertsEnabled: row.partner_push_alerts_enabled,
+    partnerPushUpdatedAtIso: row.partner_push_updated_at,
+    latestStatus: row.latest_status,
+    latestPartnerCareStatus: row.latest_partner_care_status,
+    latestCheckIn: row.latest_check_in,
+    latestPartnerNudge: row.latest_partner_nudge,
+    latestOwnerNudge: row.latest_owner_nudge,
+    latestLocation: row.latest_location,
+    createdAtIso: row.created_at,
+    updatedAtIso: row.updated_at,
+  };
 }
 
 export function normalizeShareCode(value: string) {
@@ -375,7 +421,7 @@ export function buildPartnerWellnessSnapshot({
 
 async function ensureConfiguredSession() {
   if (!isFirebaseConfigured()) {
-    throw new Error('Firebase has not been configured yet.');
+    throw new Error('Supabase has not been configured yet.');
   }
 
   let session;
@@ -386,15 +432,26 @@ async function ensureConfiguredSession() {
     throw createPartnerFriendlyError(caughtError, 'Unable to start a secure partner session right now.');
   }
 
-  if (!session) {
-    throw new Error('Firebase has not been configured yet.');
-  }
-
-  if (!session.user) {
-    throw new Error('Unable to start a secure partner session right now.');
+  if (!session?.user) {
+    throw new Error('Supabase has not been configured yet.');
   }
 
   return session;
+}
+
+async function getPartnerShareRow(shareCode: string) {
+  const session = await ensureConfiguredSession();
+  const queryResult = await session.supabase
+    .from(PARTNER_SHARE_TABLE)
+    .select('*')
+    .eq('share_code', normalizeShareCode(shareCode))
+    .maybeSingle<PartnerShareRow>();
+
+  if (queryResult.error) {
+    throw queryResult.error;
+  }
+
+  return queryResult.data;
 }
 
 export async function createPartnerShare(ownerName: string) {
@@ -403,39 +460,41 @@ export async function createPartnerShare(ownerName: string) {
 
   for (let attempt = 0; attempt < CREATE_PARTNER_SHARE_ATTEMPTS; attempt += 1) {
     const shareCode = createShareCode();
-    const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, shareCode);
 
     try {
-      await setDoc(shareRef, {
-        shareCode,
-        ownerUid: session.user.uid,
-        partnerUid: null,
-        ownerName: ownerName.trim() || 'Love',
-        partnerName: '',
-        sharingEnabled: true,
-        locationSharingEnabled: false,
-        ownerPushToken: null,
-        ownerPushAlertsEnabled: false,
-        ownerPushUpdatedAtIso: null,
-        partnerPushToken: null,
-        partnerPushAlertsEnabled: false,
-        partnerPushUpdatedAtIso: null,
-        latestStatus: null,
-        latestPartnerCareStatus: null,
-        latestCheckIn: null,
-        latestPartnerNudge: null,
-        latestOwnerNudge: null,
-        latestLocation: null,
-        createdAtIso: nowIso,
-        updatedAtIso: nowIso,
-      } satisfies PartnerShareDocument);
+      const insertResult = await session.supabase.from(PARTNER_SHARE_TABLE).insert({
+        share_code: shareCode,
+        owner_uid: session.user.id,
+        partner_uid: null,
+        owner_name: ownerName.trim() || 'Love',
+        partner_name: '',
+        sharing_enabled: true,
+        location_sharing_enabled: false,
+        owner_push_token: null,
+        owner_push_alerts_enabled: false,
+        owner_push_updated_at: null,
+        partner_push_token: null,
+        partner_push_alerts_enabled: false,
+        partner_push_updated_at: null,
+        latest_status: null,
+        latest_partner_care_status: null,
+        latest_check_in: null,
+        latest_partner_nudge: null,
+        latest_owner_nudge: null,
+        latest_location: null,
+        created_at: nowIso,
+        updated_at: nowIso,
+      } satisfies Partial<PartnerShareRow>);
+
+      if (insertResult.error) {
+        throw insertResult.error;
+      }
 
       return shareCode;
     } catch (caughtError) {
       const errorCode = getPartnerErrorCode(caughtError).toLowerCase();
 
-      // A permission-denied on create usually means the random short code already exists.
-      if (errorCode === 'permission-denied' && attempt < CREATE_PARTNER_SHARE_ATTEMPTS - 1) {
+      if (errorCode === '23505' && attempt < CREATE_PARTNER_SHARE_ATTEMPTS - 1) {
         continue;
       }
 
@@ -454,22 +513,33 @@ export async function connectToPartnerShare(shareCode: string, partnerName: stri
   }
 
   const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
-  
+  let currentShareRow: PartnerShareRow | null;
+
   try {
-    await updateDoc(shareRef, {
-      partnerUid: session.user.uid,
-      partnerName: partnerName.trim() || 'Kai',
-      updatedAtIso: new Date().toISOString(),
-    });
+    currentShareRow = await getPartnerShareRow(normalizedCode);
   } catch (caughtError) {
-    const errorCode = getPartnerErrorCode(caughtError);
-
-    if (errorCode === 'not-found' || errorCode === 'permission-denied') {
-      throw new Error('That share code is unavailable. Check the code and try again.');
-    }
-
     throw createPartnerFriendlyError(caughtError, 'Unable to open partner view right now.');
+  }
+
+  if (!currentShareRow) {
+    throw new Error('That share code is unavailable. Check the code and try again.');
+  }
+
+  if (currentShareRow.partner_uid && currentShareRow.partner_uid !== session.user.id) {
+    throw new Error('That share code is unavailable. Check the code and try again.');
+  }
+
+  const updateResult = await session.supabase
+    .from(PARTNER_SHARE_TABLE)
+    .update({
+      partner_uid: session.user.id,
+      partner_name: partnerName.trim() || 'Kai',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('share_code', normalizedCode);
+
+  if (updateResult.error) {
+    throw createPartnerFriendlyError(updateResult.error, 'Unable to open partner view right now.');
   }
 
   return normalizedCode;
@@ -482,28 +552,24 @@ export async function updatePartnerSharingPreferences(options: {
   locationSharingEnabled: boolean;
 }) {
   const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(options.shareCode));
-  const updates: {
-    ownerName: string;
-    sharingEnabled: boolean;
-    locationSharingEnabled: boolean;
-    updatedAtIso: string;
-    latestLocation?: null;
-  } = {
-    ownerName: options.ownerName.trim() || 'Love',
-    sharingEnabled: options.sharingEnabled,
-    locationSharingEnabled: options.locationSharingEnabled,
-    updatedAtIso: new Date().toISOString(),
+  const updates: Record<string, unknown> = {
+    owner_name: options.ownerName.trim() || 'Love',
+    sharing_enabled: options.sharingEnabled,
+    location_sharing_enabled: options.locationSharingEnabled,
+    updated_at: new Date().toISOString(),
   };
 
   if (!options.locationSharingEnabled) {
-    updates.latestLocation = null;
+    updates.latest_location = null;
   }
 
-  try {
-    await updateDoc(shareRef, updates);
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to update sharing right now.');
+  const updateResult = await session.supabase
+    .from(PARTNER_SHARE_TABLE)
+    .update(updates)
+    .eq('share_code', normalizeShareCode(options.shareCode));
+
+  if (updateResult.error) {
+    throw createPartnerFriendlyError(updateResult.error, 'Unable to update sharing right now.');
   }
 }
 
@@ -517,16 +583,17 @@ export async function syncPartnerStatus(options: {
     return;
   }
 
-  const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(options.shareCode));
-
   try {
-    await updateDoc(shareRef, {
-      ownerName: options.ownerName.trim() || 'Love',
-      sharingEnabled: options.sharingEnabled,
-      latestStatus: options.snapshot,
-      updatedAtIso: new Date().toISOString(),
-    });
+    const session = await ensureConfiguredSession();
+    await session.supabase
+      .from(PARTNER_SHARE_TABLE)
+      .update({
+        owner_name: options.ownerName.trim() || 'Love',
+        sharing_enabled: options.sharingEnabled,
+        latest_status: options.snapshot,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('share_code', normalizeShareCode(options.shareCode));
   } catch {
     // Best-effort background sync only.
   }
@@ -540,14 +607,15 @@ export async function syncPartnerWellnessStatus(options: {
     return;
   }
 
-  const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(options.shareCode));
-
   try {
-    await updateDoc(shareRef, {
-      latestPartnerCareStatus: options.snapshot,
-      updatedAtIso: new Date().toISOString(),
-    });
+    const session = await ensureConfiguredSession();
+    await session.supabase
+      .from(PARTNER_SHARE_TABLE)
+      .update({
+        latest_partner_care_status: options.snapshot,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('share_code', normalizeShareCode(options.shareCode));
   } catch {
     // Best-effort background sync only.
   }
@@ -561,24 +629,26 @@ export async function sendPartnerQuickCheckIn(shareCode: string, message: string
   }
 
   const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(shareCode));
-
-  try {
-    await updateDoc(shareRef, {
-      latestCheckIn: {
+  const nowIso = new Date().toISOString();
+  const updateResult = await session.supabase
+    .from(PARTNER_SHARE_TABLE)
+    .update({
+      latest_check_in: {
         message: trimmedMessage,
-        createdAtIso: new Date().toISOString(),
+        createdAtIso: nowIso,
       } satisfies PartnerQuickCheckIn,
-      updatedAtIso: new Date().toISOString(),
-    });
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to send the check-in right now.');
+      updated_at: nowIso,
+    })
+    .eq('share_code', normalizeShareCode(shareCode));
+
+  if (updateResult.error) {
+    throw createPartnerFriendlyError(updateResult.error, 'Unable to send the check-in right now.');
   }
 }
 
 async function sendCareNudgeToField(
   shareCode: string,
-  fieldName: 'latestPartnerNudge' | 'latestOwnerNudge',
+  fieldName: 'latest_partner_nudge' | 'latest_owner_nudge',
   nudge: Pick<PartnerGentleNudge, 'type' | 'title' | 'message'>,
   fallbackMessage: string,
 ) {
@@ -589,21 +659,22 @@ async function sendCareNudgeToField(
   }
 
   const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
   const createdAtIso = new Date().toISOString();
-
-  try {
-    await updateDoc(shareRef, {
+  const updateResult = await session.supabase
+    .from(PARTNER_SHARE_TABLE)
+    .update({
       [fieldName]: {
         type: nudge.type,
         title: nudge.title.trim(),
         message: nudge.message.trim(),
         createdAtIso,
       } satisfies PartnerGentleNudge,
-      updatedAtIso: createdAtIso,
-    });
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, fallbackMessage);
+      updated_at: createdAtIso,
+    })
+    .eq('share_code', normalizedCode);
+
+  if (updateResult.error) {
+    throw createPartnerFriendlyError(updateResult.error, fallbackMessage);
   }
 }
 
@@ -613,7 +684,7 @@ export async function sendPartnerCareNudge(
 ) {
   await sendCareNudgeToField(
     shareCode,
-    'latestPartnerNudge',
+    'latest_partner_nudge',
     nudge,
     'Unable to send the gentle nudge right now.',
   );
@@ -625,7 +696,7 @@ export async function sendOwnerCareNudge(
 ) {
   await sendCareNudgeToField(
     shareCode,
-    'latestOwnerNudge',
+    'latest_owner_nudge',
     nudge,
     'Unable to send the reminder right now.',
   );
@@ -636,37 +707,30 @@ export async function sharePartnerLocationCheckIn(
   coordinates: Pick<PartnerLocationCheckIn, 'latitude' | 'longitude' | 'accuracy'>,
 ) {
   const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(shareCode));
-
-  try {
-    await updateDoc(shareRef, {
-      latestLocation: {
+  const nowIso = new Date().toISOString();
+  const updateResult = await session.supabase
+    .from(PARTNER_SHARE_TABLE)
+    .update({
+      latest_location: {
         ...coordinates,
-        sharedAtIso: new Date().toISOString(),
+        sharedAtIso: nowIso,
       } satisfies PartnerLocationCheckIn,
-      updatedAtIso: new Date().toISOString(),
-    });
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to share the current location right now.');
+      updated_at: nowIso,
+    })
+    .eq('share_code', normalizeShareCode(shareCode));
+
+  if (updateResult.error) {
+    throw createPartnerFriendlyError(updateResult.error, 'Unable to share the current location right now.');
   }
 }
 
 export async function getPartnerShare(shareCode: string) {
-  const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizeShareCode(shareCode));
-  let snapshot;
-
   try {
-    snapshot = await getDoc(shareRef);
+    const row = await getPartnerShareRow(shareCode);
+    return mapPartnerShareRow(row);
   } catch (caughtError) {
     throw createPartnerFriendlyError(caughtError, 'Unable to load partner updates right now.');
   }
-
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return snapshot.data() as PartnerShareDocument;
 }
 
 export async function updatePartnerPushSubscription(options: {
@@ -682,27 +746,23 @@ export async function updatePartnerPushSubscription(options: {
   }
 
   const session = await ensureConfiguredSession();
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
+  const updates =
+    options.role === 'owner'
+      ? {
+          owner_push_token: options.alertsEnabled ? options.pushToken : null,
+          owner_push_alerts_enabled: options.alertsEnabled,
+          owner_push_updated_at: new Date().toISOString(),
+        }
+      : {
+          partner_push_token: options.alertsEnabled ? options.pushToken : null,
+          partner_push_alerts_enabled: options.alertsEnabled,
+          partner_push_updated_at: new Date().toISOString(),
+        };
 
-  try {
-    const updates =
-      options.role === 'owner'
-        ? {
-            ownerPushToken: options.alertsEnabled ? options.pushToken : null,
-            ownerPushAlertsEnabled: options.alertsEnabled,
-            ownerPushUpdatedAtIso: new Date().toISOString(),
-          }
-        : {
-            partnerPushToken: options.alertsEnabled ? options.pushToken : null,
-            partnerPushAlertsEnabled: options.alertsEnabled,
-            partnerPushUpdatedAtIso: new Date().toISOString(),
-          };
+  const updateResult = await session.supabase.from(PARTNER_SHARE_TABLE).update(updates).eq('share_code', normalizedCode);
 
-    await updateDoc(shareRef, {
-      ...updates,
-    });
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to update partner alerts right now.');
+  if (updateResult.error) {
+    throw createPartnerFriendlyError(updateResult.error, 'Unable to update partner alerts right now.');
   }
 }
 
@@ -712,26 +772,25 @@ export async function subscribeToPartnerShare(
   onError: (error: Error) => void,
 ) {
   const normalizedCode = normalizeShareCode(shareCode);
+  const supabase = getSupabaseClient();
 
-  if (!normalizedCode || !isFirebaseConfigured()) {
+  if (!normalizedCode || !isFirebaseConfigured() || !supabase) {
     onValue(null);
-    return (() => {}) as Unsubscribe;
+    return () => {};
   }
-
-  let session;
 
   try {
-    session = await ensureConfiguredSession();
+    await ensureConfiguredSession();
   } catch (caughtError) {
     onError(createPartnerFriendlyError(caughtError, 'Unable to load partner updates.'));
-    return (() => {}) as Unsubscribe;
+    return () => {};
   }
 
-  const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
   let lastSerializedValue = '';
+  let realtimeChannel: RealtimeChannel | null = null;
 
-  const emitSnapshotValue = (snapshot: Awaited<ReturnType<typeof getDoc>>) => {
-    const nextValue = snapshot.exists() ? (snapshot.data() as PartnerShareDocument) : null;
+  const emitValue = (row: PartnerShareRow | null) => {
+    const nextValue = mapPartnerShareRow(row);
     const serializedValue = JSON.stringify(nextValue);
 
     if (serializedValue === lastSerializedValue) {
@@ -744,12 +803,32 @@ export async function subscribeToPartnerShare(
 
   const pollLatestValue = async () => {
     try {
-      const snapshot = await getDoc(shareRef);
-      emitSnapshotValue(snapshot);
+      const row = await getPartnerShareRow(normalizedCode);
+      emitValue(row);
     } catch (error) {
       onError(createPartnerFriendlyError(error, 'Unable to refresh partner updates.'));
     }
   };
+
+  try {
+    realtimeChannel = supabase
+      .channel(`partner-share-${normalizedCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: PARTNER_SHARE_TABLE,
+          filter: `share_code=eq.${normalizedCode}`,
+        },
+        () => {
+          void pollLatestValue();
+        },
+      )
+      .subscribe();
+  } catch {
+    realtimeChannel = null;
+  }
 
   const intervalId = window.setInterval(() => {
     void pollLatestValue();
@@ -771,16 +850,6 @@ export async function subscribeToPartnerShare(
 
   void pollLatestValue();
 
-  const unsubscribe = onSnapshot(
-    shareRef,
-    (snapshot) => {
-      emitSnapshotValue(snapshot);
-    },
-    (error) => {
-      onError(createPartnerFriendlyError(error, 'Unable to load partner updates.'));
-    },
-  );
-
   return () => {
     window.clearInterval(intervalId);
 
@@ -792,7 +861,9 @@ export async function subscribeToPartnerShare(
       document.removeEventListener('visibilitychange', handleVisibilityRefresh);
     }
 
-    unsubscribe();
+    if (realtimeChannel) {
+      void supabase.removeChannel(realtimeChannel);
+    }
   };
 }
 

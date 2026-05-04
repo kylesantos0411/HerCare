@@ -2,9 +2,7 @@ import React, { useEffect } from 'react';
 import { BellRing, ChevronLeft, Link2, Moon, ShieldCheck } from 'lucide-react';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { isFirebaseConfigured } from '../utils/firebase';
-import { updatePartnerPushSubscription } from '../utils/partner';
-import { registerPartnerPushNotifications, unregisterPartnerPushNotifications } from '../utils/partnerPush';
+import { isSupabaseConfigured } from '../utils/firebase';
 import './PartnerSettings.css';
 
 interface PartnerSettingsProps {
@@ -25,71 +23,15 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
   const [partnerAlertsEnabled, setPartnerAlertsEnabled] = useLocalStorage('hercare_partner_checkin_alerts_enabled', true);
   const [partnerPushStatus, setPartnerPushStatus] = useLocalStorage(
     'hercare_partner_push_status',
-    'Push alerts will be ready after this phone connects.',
+    'Background reminders will be ready after this phone connects.',
   );
-  const configured = isFirebaseConfigured();
+  const configured = isSupabaseConfigured();
 
   useEffect(() => {
-    let isCancelled = false;
-
-    const syncPushSubscription = async () => {
-      if (!configured || !shareCode) {
-        setPartnerPushStatus('Push alerts will be ready after this phone connects.');
-        return;
-      }
-
-      try {
-        if (!partnerAlertsEnabled) {
-          await unregisterPartnerPushNotifications();
-          await updatePartnerPushSubscription({
-            shareCode,
-            pushToken: null,
-            alertsEnabled: false,
-            role: 'partner',
-          });
-
-          if (!isCancelled) {
-            setPartnerPushStatus('Background push alerts are off on this phone.');
-          }
-
-          return;
-        }
-
-        if (!isCancelled) {
-          setPartnerPushStatus('Preparing background push alerts on this phone...');
-        }
-
-        const token = await registerPartnerPushNotifications();
-
-        if (!token) {
-          throw new Error('Push notifications are only available on the installed Android app.');
-        }
-
-        await updatePartnerPushSubscription({
-          shareCode,
-          pushToken: token,
-          alertsEnabled: true,
-          role: 'partner',
-        });
-
-        if (!isCancelled) {
-          setPartnerPushStatus('Background push alerts are ready on this phone.');
-        }
-      } catch (caughtError) {
-        if (!isCancelled) {
-          setPartnerPushStatus(
-            caughtError instanceof Error ? caughtError.message : 'Unable to prepare background push alerts.',
-          );
-        }
-      }
-    };
-
-    void syncPushSubscription();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [configured, partnerAlertsEnabled, setPartnerPushStatus, shareCode]);
+    if (!configured || !shareCode) {
+      setPartnerPushStatus('Background reminders will be ready after this phone connects.');
+    }
+  }, [configured, setPartnerPushStatus, shareCode]);
 
   return (
     <div className="partner-settings-screen animation-slide-in">
@@ -108,8 +50,8 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
           <div className="partner-settings-copy">
             <BellRing size={18} />
             <div>
-              <strong>Background push alerts</strong>
-              <p>Get real device notifications for new check-ins even when this app is minimized or closed.</p>
+              <strong>Background reminders</strong>
+              <p>Run a background reminder service so hydration and meal nudges can appear over other apps.</p>
             </div>
           </div>
           <label className="toggle-switch">
@@ -162,7 +104,7 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
           <div className="partner-settings-copy">
             <ShieldCheck size={18} />
             <div>
-              <strong>Push status</strong>
+              <strong>Reminder status</strong>
               <p>{partnerPushStatus}</p>
             </div>
           </div>
@@ -175,6 +117,16 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
           <div>
             <strong>Privacy note</strong>
             <p>Location is still manual only. It appears only when she actively sends it from her phone.</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="partner-settings-note">
+        <div className="partner-settings-copy">
+          <BellRing size={18} />
+          <div>
+            <strong>Reminder behavior</strong>
+            <p>The Android app keeps a small background service active while this toggle is on.</p>
           </div>
         </div>
       </Card>
