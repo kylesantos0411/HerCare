@@ -16,11 +16,13 @@ public class PartnerHydrationReminderActivity extends AppCompatActivity {
     public static final String EXTRA_TITLE = "partner_reminder_title";
     public static final String EXTRA_MESSAGE = "partner_reminder_message";
     public static final String EXTRA_SHARE_CODE = "partner_reminder_share_code";
+    public static final String EXTRA_LAUNCH_TARGET = "partner_reminder_launch_target";
 
     private static final long REMINDER_DURATION_MS = 60_000L;
 
     private CountDownTimer countDownTimer;
     private int notificationId;
+    private String launchTarget;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,11 +33,12 @@ public class PartnerHydrationReminderActivity extends AppCompatActivity {
         notificationId = getIntent().getIntExtra(EXTRA_NOTIFICATION_ID, -1);
         String title = getIntent().getStringExtra(EXTRA_TITLE);
         String message = getIntent().getStringExtra(EXTRA_MESSAGE);
+        launchTarget = getIntent().getStringExtra(EXTRA_LAUNCH_TARGET);
 
         TextView titleView = findViewById(R.id.partner_reminder_title);
         TextView messageView = findViewById(R.id.partner_reminder_message);
         TextView timerView = findViewById(R.id.partner_reminder_timer);
-        Button openHydrationButton = findViewById(R.id.partner_reminder_open_button);
+        Button openReminderButton = findViewById(R.id.partner_reminder_open_button);
         Button dismissButton = findViewById(R.id.partner_reminder_dismiss_button);
 
         titleView.setText(title == null || title.trim().isEmpty()
@@ -44,10 +47,11 @@ public class PartnerHydrationReminderActivity extends AppCompatActivity {
         messageView.setText(message == null || message.trim().isEmpty()
             ? getString(R.string.partner_reminder_default_message)
             : message);
+        openReminderButton.setText(getOpenButtonTextResId());
 
-        openHydrationButton.setOnClickListener(view -> {
+        openReminderButton.setOnClickListener(view -> {
             cancelNotification();
-            openHydrationScreen();
+            openReminderTarget();
             finish();
         });
 
@@ -96,11 +100,37 @@ public class PartnerHydrationReminderActivity extends AppCompatActivity {
         );
     }
 
-    private void openHydrationScreen() {
+    private void openReminderTarget() {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(WidgetStorage.EXTRA_LAUNCH_TARGET, "hydration");
+        intent.putExtra(WidgetStorage.EXTRA_LAUNCH_TARGET, getLaunchTarget());
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
+    }
+
+    private String getLaunchTarget() {
+        if ("meals".equals(launchTarget)) {
+            return "meals";
+        }
+
+        if ("partner_dashboard".equals(launchTarget)) {
+            return "partner_dashboard";
+        }
+
+        return "hydration";
+    }
+
+    private int getOpenButtonTextResId() {
+        String target = getLaunchTarget();
+
+        if ("meals".equals(target)) {
+            return R.string.partner_reminder_open_meals_action;
+        }
+
+        if ("partner_dashboard".equals(target)) {
+            return R.string.partner_reminder_open_partner_view_action;
+        }
+
+        return R.string.partner_reminder_open_hydration_action;
     }
 
     private void cancelNotification() {

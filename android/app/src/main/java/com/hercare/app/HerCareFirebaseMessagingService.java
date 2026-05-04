@@ -15,6 +15,8 @@ import java.util.Map;
 public class HerCareFirebaseMessagingService extends FirebaseMessagingService {
     private static final String ALERT_CHANNEL_ID = "hercare-partner-alerts";
     private static final String REMINDER_CHANNEL_ID = "hercare-partner-reminders";
+    private static final String NUDGE_TYPE_HYDRATION = "hydration";
+    private static final String NUDGE_TYPE_MEALS = "meals";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -34,11 +36,11 @@ public class HerCareFirebaseMessagingService extends FirebaseMessagingService {
         String body = valueOrDefault(data.get("body"), "Open HerCare for the latest partner update.");
         String shareCode = valueOrDefault(data.get("shareCode"), "");
         String nudgeType = valueOrDefault(data.get("nudgeType"), "");
-        boolean fullScreenReminder = "partner_partner_nudge".equals(type) && "hydration".equals(nudgeType);
+        boolean fullScreenReminder = shouldUseFullScreenReminder(type, nudgeType);
         int notificationId = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
 
         ensureChannels();
-        showNotification(notificationId, title, body, shareCode, type, fullScreenReminder);
+        showNotification(notificationId, title, body, shareCode, type, nudgeType, fullScreenReminder);
     }
 
     private void showNotification(
@@ -47,11 +49,12 @@ public class HerCareFirebaseMessagingService extends FirebaseMessagingService {
         String body,
         String shareCode,
         String type,
+        String nudgeType,
         boolean fullScreenReminder
     ) {
         PendingIntent contentIntent = fullScreenReminder
-            ? createReminderPendingIntent(notificationId, title, body, shareCode)
-            : createAppPendingIntent(type);
+            ? createReminderPendingIntent(notificationId, title, body, shareCode, type, nudgeType)
+            : createAppPendingIntent(type, nudgeType);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(
             this,
@@ -74,14 +77,14 @@ public class HerCareFirebaseMessagingService extends FirebaseMessagingService {
         NotificationManagerCompat.from(this).notify(notificationId, builder.build());
     }
 
-    private PendingIntent createAppPendingIntent(String type) {
+    private PendingIntent createAppPendingIntent(String type, String nudgeType) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         String launchTarget = "partner_dashboard";
 
-        if ("partner_partner_nudge".equals(type)) {
-            launchTarget = "hydration";
+        if ("partner_partner_nudge".equals(type) || "partner_owner_nudge".equals(type)) {
+            launchTarget = getLaunchTargetForMessageType(type, nudgeType);
         }
 
         intent.putExtra(WidgetStorage.EXTRA_LAUNCH_TARGET, launchTarget);
@@ -94,12 +97,23 @@ public class HerCareFirebaseMessagingService extends FirebaseMessagingService {
         );
     }
 
-    private PendingIntent createReminderPendingIntent(int notificationId, String title, String body, String shareCode) {
+    private PendingIntent createReminderPendingIntent(
+        int notificationId,
+        String title,
+        String body,
+        String shareCode,
+        String type,
+        String nudgeType
+    ) {
         Intent intent = new Intent(this, PartnerHydrationReminderActivity.class);
         intent.putExtra(PartnerHydrationReminderActivity.EXTRA_NOTIFICATION_ID, notificationId);
         intent.putExtra(PartnerHydrationReminderActivity.EXTRA_TITLE, title);
         intent.putExtra(PartnerHydrationReminderActivity.EXTRA_MESSAGE, body);
         intent.putExtra(PartnerHydrationReminderActivity.EXTRA_SHARE_CODE, shareCode);
+        intent.putExtra(
+            PartnerHydrationReminderActivity.EXTRA_LAUNCH_TARGET,
+            getLaunchTargetForMessageType(type, nudgeType)
+        );
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         return PendingIntent.getActivity(
@@ -142,5 +156,26 @@ public class HerCareFirebaseMessagingService extends FirebaseMessagingService {
 
     private String valueOrDefault(String value, String fallback) {
         return value == null || value.trim().isEmpty() ? fallback : value.trim();
+    }
+
+    private boolean shouldUseFullScreenReminder(String type, String nudgeType) {
+        return ("partner_partner_nudge".equals(type) || "partner_owner_nudge".equals(type))
+            && (NUDGE_TYPE_HYDRATION.equals(nudgeType) || NUDGE_TYPE_MEALS.equals(nudgeType));
+    }
+
+    private String getLaunchTargetForMessageType(String type, String nudgeType) {
+        if ("partner_owner_nudge".equals(type)) {
+            return "partner_dashboard";
+        }
+
+        return getMainLaunchTargetForNudgeType(nudgeType);
+    }
+
+    private String getMainLaunchTargetForNudgeType(String nudgeType) {
+        if (NUDGE_TYPE_MEALS.equals(nudgeType)) {
+            return "meals";
+        }
+
+        return "hydration";
     }
 }
