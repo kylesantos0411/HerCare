@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -28,8 +30,18 @@
 
         </activity>
 
+        <activity
+            android:name=".PartnerHydrationReminderActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:theme="@style/HerCareReminderTheme" />
+
         <receiver
             android:name=".HerCareQuickWidgetProvider"
+            android:label="@string/widget_name"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -39,6 +51,27 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/hercare_quick_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".HerCarePartnerWidgetProvider"
+            android:label="@string/partner_widget_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hercare_partner_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".HerCareFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

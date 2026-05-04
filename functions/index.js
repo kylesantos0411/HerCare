@@ -21,12 +21,15 @@ function buildPushPayload(beforeData, afterData, shareCode) {
 
   if (afterCheckInAt && afterCheckInAt !== beforeCheckInAt) {
     return {
+      recipient: 'partner',
       title: `A little check-in from ${getOwnerName(afterData)}`,
       body: afterCheckIn.message,
       data: {
         type: 'partner_checkin',
         shareCode,
         createdAtIso: afterCheckInAt,
+        title: `A little check-in from ${getOwnerName(afterData)}`,
+        body: afterCheckIn.message,
       },
       tag: 'partner-checkin',
     };
@@ -38,14 +41,39 @@ function buildPushPayload(beforeData, afterData, shareCode) {
 
   if (afterOwnerNudgeAt && afterOwnerNudgeAt !== beforeOwnerNudgeAt) {
     return {
+      recipient: 'partner',
       title: afterOwnerNudge.title,
       body: afterOwnerNudge.message,
       data: {
         type: 'partner_owner_nudge',
         shareCode,
         createdAtIso: afterOwnerNudgeAt,
+        title: afterOwnerNudge.title,
+        body: afterOwnerNudge.message,
+        nudgeType: afterOwnerNudge.type || 'general',
       },
       tag: `partner-owner-nudge-${afterOwnerNudge.type || 'general'}`,
+    };
+  }
+
+  const beforePartnerNudgeAt = beforeData?.latestPartnerNudge?.createdAtIso || '';
+  const afterPartnerNudge = afterData?.latestPartnerNudge || null;
+  const afterPartnerNudgeAt = afterPartnerNudge?.createdAtIso || '';
+
+  if (afterPartnerNudgeAt && afterPartnerNudgeAt !== beforePartnerNudgeAt) {
+    return {
+      recipient: 'owner',
+      title: afterPartnerNudge.title,
+      body: afterPartnerNudge.message,
+      data: {
+        type: 'partner_partner_nudge',
+        shareCode,
+        createdAtIso: afterPartnerNudgeAt,
+        title: afterPartnerNudge.title,
+        body: afterPartnerNudge.message,
+        nudgeType: afterPartnerNudge.type || 'general',
+      },
+      tag: `partner-partner-nudge-${afterPartnerNudge.type || 'general'}`,
     };
   }
 
@@ -55,12 +83,15 @@ function buildPushPayload(beforeData, afterData, shareCode) {
 
   if (afterLocationAt && afterLocationAt !== beforeLocationAt) {
     return {
+      recipient: 'partner',
       title: `${getOwnerName(afterData)} shared a location pin`,
       body: 'Open HerCare when you are ready to see where she checked in from.',
       data: {
         type: 'partner_location',
         shareCode,
         sharedAtIso: afterLocationAt,
+        title: `${getOwnerName(afterData)} shared a location pin`,
+        body: 'Open HerCare when you are ready to see where she checked in from.',
       },
       tag: 'partner-location',
     };
@@ -69,12 +100,21 @@ function buildPushPayload(beforeData, afterData, shareCode) {
   return null;
 }
 
-async function clearPartnerPushToken(shareCode) {
-  await db.doc(`partnerShares/${shareCode}`).update({
-    partnerPushToken: null,
-    partnerPushAlertsEnabled: false,
-    partnerPushUpdatedAtIso: new Date().toISOString(),
-  });
+async function clearPushToken(shareCode, recipient) {
+  const updates =
+    recipient === 'owner'
+      ? {
+          ownerPushToken: null,
+          ownerPushAlertsEnabled: false,
+          ownerPushUpdatedAtIso: new Date().toISOString(),
+        }
+      : {
+          partnerPushToken: null,
+          partnerPushAlertsEnabled: false,
+          partnerPushUpdatedAtIso: new Date().toISOString(),
+        };
+
+  await db.doc(`partnerShares/${shareCode}`).update(updates);
 }
 
 exports.sendPartnerPushAlert = onDocumentUpdated(PARTNER_SHARE_PATH, async (event) => {
@@ -82,37 +122,42 @@ exports.sendPartnerPushAlert = onDocumentUpdated(PARTNER_SHARE_PATH, async (even
   const afterData = event.data?.after?.data() || null;
   const shareCode = event.params.shareCode;
 
-  if (!afterData || !afterData.partnerPushToken || !afterData.partnerPushAlertsEnabled || !afterData.partnerUid) {
-    return;
-  }
-
   const payload = buildPushPayload(beforeData, afterData, shareCode);
 
   if (!payload) {
     return;
   }
 
+  if (!afterData) {
+    return;
+  }
+
+  const targetToken =
+    payload.recipient === 'owner'
+      ? afterData.ownerPushAlertsEnabled && afterData.ownerUid
+        ? afterData.ownerPushToken
+        : null
+      : afterData.partnerPushAlertsEnabled && afterData.partnerUid
+        ? afterData.partnerPushToken
+        : null;
+
+  if (!targetToken) {
+    return;
+  }
+
   try {
     await messaging.send({
-      token: afterData.partnerPushToken,
-      notification: {
-        title: payload.title,
-        body: payload.body,
-      },
+      token: targetToken,
       data: payload.data,
       android: {
         priority: 'high',
-        notification: {
-          channelId: PARTNER_PUSH_CHANNEL_ID,
-          tag: payload.tag,
-        },
       },
     });
   } catch (error) {
     const errorCode = error && typeof error === 'object' ? error.code : '';
 
     if (errorCode === 'messaging/registration-token-not-registered') {
-      await clearPartnerPushToken(shareCode);
+      await clearPushToken(shareCode, payload.recipient);
       return;
     }
 

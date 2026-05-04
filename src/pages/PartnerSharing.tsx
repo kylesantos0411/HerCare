@@ -18,9 +18,11 @@ import {
   sharePartnerLocationCheckIn,
   sendPartnerQuickCheckIn,
   subscribeToPartnerShare,
+  updatePartnerPushSubscription,
   updatePartnerSharingPreferences,
   type PartnerShareDocument,
 } from '../utils/partner';
+import { registerPartnerPushNotifications, unregisterPartnerPushNotifications } from '../utils/partnerPush';
 import './PartnerSharing.css';
 
 interface PartnerSharingProps {
@@ -45,6 +47,11 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
   const [shareCode, setShareCode] = useLocalStorage('hercare_partner_share_code', '');
   const [sharingEnabled, setSharingEnabled] = useLocalStorage('hercare_partner_sharing_enabled', false);
   const [locationSharingEnabled, setLocationSharingEnabled] = useLocalStorage('hercare_partner_location_enabled', false);
+  const [ownerAlertsEnabled, setOwnerAlertsEnabled] = useLocalStorage('hercare_owner_partner_alerts_enabled', true);
+  const [ownerPushStatus, setOwnerPushStatus] = useLocalStorage(
+    'hercare_owner_push_status',
+    'Partner reminders will be ready after a share code is active.',
+  );
   const [shareDoc, setShareDoc] = useState<PartnerShareDocument | null>(null);
   const [checkInMessage, setCheckInMessage] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -92,6 +99,68 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
       stopListening?.();
     };
   }, [configured, shareCode]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const syncOwnerPushSubscription = async () => {
+      if (!configured || !shareCode || !sharingEnabled) {
+        setOwnerPushStatus('Partner reminders will be ready after a share code is active.');
+        return;
+      }
+
+      try {
+        if (!ownerAlertsEnabled) {
+          await unregisterPartnerPushNotifications();
+          await updatePartnerPushSubscription({
+            shareCode,
+            pushToken: null,
+            alertsEnabled: false,
+            role: 'owner',
+          });
+
+          if (!isCancelled) {
+            setOwnerPushStatus('Partner reminders are off on this phone.');
+          }
+
+          return;
+        }
+
+        if (!isCancelled) {
+          setOwnerPushStatus('Preparing partner reminders on this phone...');
+        }
+
+        const token = await registerPartnerPushNotifications();
+
+        if (!token) {
+          throw new Error('Push notifications are only available on the installed Android app.');
+        }
+
+        await updatePartnerPushSubscription({
+          shareCode,
+          pushToken: token,
+          alertsEnabled: true,
+          role: 'owner',
+        });
+
+        if (!isCancelled) {
+          setOwnerPushStatus('Partner reminders are ready on this phone.');
+        }
+      } catch (caughtError) {
+        if (!isCancelled) {
+          setOwnerPushStatus(
+            caughtError instanceof Error ? caughtError.message : 'Unable to prepare partner reminders right now.',
+          );
+        }
+      }
+    };
+
+    void syncOwnerPushSubscription();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [configured, ownerAlertsEnabled, setOwnerPushStatus, shareCode, sharingEnabled]);
 
   const handleCreateShare = async () => {
     setError('');
@@ -315,6 +384,28 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
 
             <div className="partner-status-row">
               <div className="partner-status-copy">
+                <BellRing size={18} />
+                <div>
+                  <strong>Allow partner reminders</strong>
+                  <p>Receive hydration nudges and partner check-ins even when HerCare is closed.</p>
+                </div>
+              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={ownerAlertsEnabled}
+                  onChange={(event) => setOwnerAlertsEnabled(event.target.checked)}
+                  disabled={!shareCode || !sharingEnabled}
+                  aria-label="Toggle partner reminders on this phone"
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+
+            <div className="settings-divider"></div>
+
+            <div className="partner-status-row">
+              <div className="partner-status-copy">
                 <MapPinned size={18} />
                 <div>
                   <strong>Allow location check-ins</strong>
@@ -332,6 +423,12 @@ export const PartnerSharing: React.FC<PartnerSharingProps> = ({ onBack }) => {
                 <span className="slider"></span>
               </label>
             </div>
+          </Card>
+
+          <Card className="partner-detail-card">
+            <p className="partner-section-kicker">Reminder status</p>
+            <h3>Partner reminders on this phone</h3>
+            <p className="partner-detail-note">{ownerPushStatus}</p>
           </Card>
 
           <Card className="partner-detail-card">

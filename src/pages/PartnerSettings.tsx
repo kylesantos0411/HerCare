@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BellRing, ChevronLeft, Link2, Moon, ShieldCheck } from 'lucide-react';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { isFirebaseConfigured } from '../utils/firebase';
+import { updatePartnerPushSubscription } from '../utils/partner';
+import { registerPartnerPushNotifications, unregisterPartnerPushNotifications } from '../utils/partnerPush';
 import './PartnerSettings.css';
 
 interface PartnerSettingsProps {
@@ -20,10 +23,73 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
   onDisconnect,
 }) => {
   const [partnerAlertsEnabled, setPartnerAlertsEnabled] = useLocalStorage('hercare_partner_checkin_alerts_enabled', true);
-  const [partnerPushStatus] = useLocalStorage(
+  const [partnerPushStatus, setPartnerPushStatus] = useLocalStorage(
     'hercare_partner_push_status',
     'Push alerts will be ready after this phone connects.',
   );
+  const configured = isFirebaseConfigured();
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const syncPushSubscription = async () => {
+      if (!configured || !shareCode) {
+        setPartnerPushStatus('Push alerts will be ready after this phone connects.');
+        return;
+      }
+
+      try {
+        if (!partnerAlertsEnabled) {
+          await unregisterPartnerPushNotifications();
+          await updatePartnerPushSubscription({
+            shareCode,
+            pushToken: null,
+            alertsEnabled: false,
+            role: 'partner',
+          });
+
+          if (!isCancelled) {
+            setPartnerPushStatus('Background push alerts are off on this phone.');
+          }
+
+          return;
+        }
+
+        if (!isCancelled) {
+          setPartnerPushStatus('Preparing background push alerts on this phone...');
+        }
+
+        const token = await registerPartnerPushNotifications();
+
+        if (!token) {
+          throw new Error('Push notifications are only available on the installed Android app.');
+        }
+
+        await updatePartnerPushSubscription({
+          shareCode,
+          pushToken: token,
+          alertsEnabled: true,
+          role: 'partner',
+        });
+
+        if (!isCancelled) {
+          setPartnerPushStatus('Background push alerts are ready on this phone.');
+        }
+      } catch (caughtError) {
+        if (!isCancelled) {
+          setPartnerPushStatus(
+            caughtError instanceof Error ? caughtError.message : 'Unable to prepare background push alerts.',
+          );
+        }
+      }
+    };
+
+    void syncPushSubscription();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [configured, partnerAlertsEnabled, setPartnerPushStatus, shareCode]);
 
   return (
     <div className="partner-settings-screen animation-slide-in">

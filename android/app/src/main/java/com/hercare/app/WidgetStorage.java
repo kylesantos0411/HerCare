@@ -24,12 +24,27 @@ final class WidgetStorage {
     private static final String KEY_MOOD_TEXT = "mood_text";
     private static final String KEY_SLEEP_TEXT = "sleep_text";
     private static final String KEY_SUPPORT_TEXT = "support_text";
+    private static final String KEY_PARTNER_CONNECTED = "partner_connected";
+    private static final String KEY_PARTNER_OWNER_NAME = "partner_owner_name";
+    private static final String KEY_PARTNER_STATUS_TEXT = "partner_status_text";
+    private static final String KEY_PARTNER_UPDATED_TEXT = "partner_updated_text";
+    private static final String KEY_PARTNER_HYDRATION_TEXT = "partner_hydration_text";
+    private static final String KEY_PARTNER_MEALS_TEXT = "partner_meals_text";
+    private static final String KEY_PARTNER_STUDY_TEXT = "partner_study_text";
+    private static final String KEY_PARTNER_NOTE_TEXT = "partner_note_text";
     private static final String KEY_PENDING_TARGET = "pending_target";
     private static final String KEY_PENDING_ACTIONS = "pending_actions";
 
     private static final int DEFAULT_HYDRATION_GOAL = 8;
     private static final int DEFAULT_MEAL_GOAL = 4;
     private static final String DEFAULT_SUPPORT_TEXT = "Tap a stat to open. Use quick buttons to log.";
+    private static final String DEFAULT_PARTNER_OWNER_NAME = "Partner board";
+    private static final String DEFAULT_PARTNER_STATUS_TEXT = "Connect";
+    private static final String DEFAULT_PARTNER_UPDATED_TEXT = "Connect a partner code to enable this widget.";
+    private static final String DEFAULT_PARTNER_HYDRATION_TEXT = "--";
+    private static final String DEFAULT_PARTNER_MEALS_TEXT = "--";
+    private static final String DEFAULT_PARTNER_STUDY_TEXT = "No live study sync yet.";
+    private static final String DEFAULT_PARTNER_NOTE_TEXT = "Open Partner View to connect this phone and see shared care updates.";
 
     static final String EXTRA_LAUNCH_TARGET = "com.hercare.app.widget.LAUNCH_TARGET";
     static final String ACTION_LOG_HYDRATION = "com.hercare.app.widget.LOG_HYDRATION";
@@ -128,6 +143,37 @@ final class WidgetStorage {
         }
     }
 
+    static final class PartnerSnapshot {
+        boolean connected;
+        String ownerNameText;
+        String statusText;
+        String updatedText;
+        String hydrationText;
+        String mealsText;
+        String studyText;
+        String noteText;
+
+        PartnerSnapshot(
+            boolean connected,
+            String ownerNameText,
+            String statusText,
+            String updatedText,
+            String hydrationText,
+            String mealsText,
+            String studyText,
+            String noteText
+        ) {
+            this.connected = connected;
+            this.ownerNameText = ownerNameText;
+            this.statusText = statusText;
+            this.updatedText = updatedText;
+            this.hydrationText = hydrationText;
+            this.mealsText = mealsText;
+            this.studyText = studyText;
+            this.noteText = noteText;
+        }
+    }
+
     static Snapshot readSnapshot(Context context) {
         SharedPreferences preferences = getPreferences(context);
         Snapshot snapshot = readSnapshot(preferences);
@@ -137,6 +183,16 @@ final class WidgetStorage {
     static void saveSnapshot(Context context, Snapshot snapshot) {
         SharedPreferences preferences = getPreferences(context);
         saveSnapshot(preferences, sanitizeSnapshot(snapshot));
+    }
+
+    static PartnerSnapshot readPartnerSnapshot(Context context) {
+        SharedPreferences preferences = getPreferences(context);
+        return sanitizePartnerSnapshot(readPartnerSnapshot(preferences));
+    }
+
+    static void savePartnerSnapshot(Context context, PartnerSnapshot snapshot) {
+        SharedPreferences preferences = getPreferences(context);
+        savePartnerSnapshot(preferences, sanitizePartnerSnapshot(snapshot));
     }
 
     static void captureLaunchTarget(Context context, Intent intent) {
@@ -222,6 +278,19 @@ final class WidgetStorage {
         );
     }
 
+    private static PartnerSnapshot readPartnerSnapshot(SharedPreferences preferences) {
+        return new PartnerSnapshot(
+            preferences.getBoolean(KEY_PARTNER_CONNECTED, false),
+            sanitizeText(preferences.getString(KEY_PARTNER_OWNER_NAME, null), DEFAULT_PARTNER_OWNER_NAME, 40),
+            sanitizeText(preferences.getString(KEY_PARTNER_STATUS_TEXT, null), DEFAULT_PARTNER_STATUS_TEXT, 18),
+            sanitizeText(preferences.getString(KEY_PARTNER_UPDATED_TEXT, null), DEFAULT_PARTNER_UPDATED_TEXT, 64),
+            sanitizeText(preferences.getString(KEY_PARTNER_HYDRATION_TEXT, null), DEFAULT_PARTNER_HYDRATION_TEXT, 16),
+            sanitizeText(preferences.getString(KEY_PARTNER_MEALS_TEXT, null), DEFAULT_PARTNER_MEALS_TEXT, 16),
+            sanitizeText(preferences.getString(KEY_PARTNER_STUDY_TEXT, null), DEFAULT_PARTNER_STUDY_TEXT, 64),
+            sanitizeText(preferences.getString(KEY_PARTNER_NOTE_TEXT, null), DEFAULT_PARTNER_NOTE_TEXT, 120)
+        );
+    }
+
     private static Snapshot normalizeForToday(SharedPreferences preferences, Snapshot snapshot) {
         String todayKey = getTodayKey();
         Snapshot normalized = sanitizeSnapshot(snapshot);
@@ -256,6 +325,19 @@ final class WidgetStorage {
         );
     }
 
+    private static PartnerSnapshot sanitizePartnerSnapshot(PartnerSnapshot snapshot) {
+        return new PartnerSnapshot(
+            snapshot.connected,
+            sanitizeText(snapshot.ownerNameText, DEFAULT_PARTNER_OWNER_NAME, 40),
+            sanitizeText(snapshot.statusText, DEFAULT_PARTNER_STATUS_TEXT, 18),
+            sanitizeText(snapshot.updatedText, DEFAULT_PARTNER_UPDATED_TEXT, 64),
+            sanitizeText(snapshot.hydrationText, DEFAULT_PARTNER_HYDRATION_TEXT, 16),
+            sanitizeText(snapshot.mealsText, DEFAULT_PARTNER_MEALS_TEXT, 16),
+            sanitizeText(snapshot.studyText, DEFAULT_PARTNER_STUDY_TEXT, 64),
+            sanitizeText(snapshot.noteText, DEFAULT_PARTNER_NOTE_TEXT, 120)
+        );
+    }
+
     private static void saveSnapshot(SharedPreferences preferences, Snapshot snapshot) {
         Snapshot normalized = sanitizeSnapshot(snapshot);
 
@@ -272,6 +354,22 @@ final class WidgetStorage {
             .putString(KEY_MOOD_TEXT, normalized.moodText)
             .putString(KEY_SLEEP_TEXT, normalized.sleepText)
             .putString(KEY_SUPPORT_TEXT, normalized.supportText)
+            .apply();
+    }
+
+    private static void savePartnerSnapshot(SharedPreferences preferences, PartnerSnapshot snapshot) {
+        PartnerSnapshot normalized = sanitizePartnerSnapshot(snapshot);
+
+        preferences
+            .edit()
+            .putBoolean(KEY_PARTNER_CONNECTED, normalized.connected)
+            .putString(KEY_PARTNER_OWNER_NAME, normalized.ownerNameText)
+            .putString(KEY_PARTNER_STATUS_TEXT, normalized.statusText)
+            .putString(KEY_PARTNER_UPDATED_TEXT, normalized.updatedText)
+            .putString(KEY_PARTNER_HYDRATION_TEXT, normalized.hydrationText)
+            .putString(KEY_PARTNER_MEALS_TEXT, normalized.mealsText)
+            .putString(KEY_PARTNER_STUDY_TEXT, normalized.studyText)
+            .putString(KEY_PARTNER_NOTE_TEXT, normalized.noteText)
             .apply();
     }
 
@@ -359,6 +457,8 @@ final class WidgetStorage {
             case "sleep":
             case "shift":
             case "notes":
+            case "partner_dashboard":
+            case "partner_settings":
                 return value.trim();
             default:
                 return null;

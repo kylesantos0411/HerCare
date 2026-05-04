@@ -33,6 +33,26 @@ public class WidgetBridgePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void syncPartnerSnapshot(PluginCall call) {
+        WidgetStorage.savePartnerSnapshot(
+            getContext(),
+            new WidgetStorage.PartnerSnapshot(
+                call.getBoolean("connected", false),
+                call.getString("ownerNameText", "Partner board"),
+                call.getString("statusText", "Connect"),
+                call.getString("updatedText", "Connect a partner code to enable this widget."),
+                call.getString("hydrationText", "--"),
+                call.getString("mealsText", "--"),
+                call.getString("studyText", "No live study sync yet."),
+                call.getString("noteText", "Open Partner View to connect this phone and see shared care updates.")
+            )
+        );
+
+        HerCarePartnerWidgetProvider.updateAllWidgets(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
     public void consumeLaunchAction(PluginCall call) {
         JSObject result = new JSObject();
         result.put("target", WidgetStorage.consumePendingLaunchTarget(getContext()));

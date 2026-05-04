@@ -155,6 +155,9 @@ export interface PartnerShareDocument {
   partnerName: string;
   sharingEnabled: boolean;
   locationSharingEnabled: boolean;
+  ownerPushToken: string | null;
+  ownerPushAlertsEnabled: boolean;
+  ownerPushUpdatedAtIso: string | null;
   partnerPushToken: string | null;
   partnerPushAlertsEnabled: boolean;
   partnerPushUpdatedAtIso: string | null;
@@ -411,6 +414,9 @@ export async function createPartnerShare(ownerName: string) {
         partnerName: '',
         sharingEnabled: true,
         locationSharingEnabled: false,
+        ownerPushToken: null,
+        ownerPushAlertsEnabled: false,
+        ownerPushUpdatedAtIso: null,
         partnerPushToken: null,
         partnerPushAlertsEnabled: false,
         partnerPushUpdatedAtIso: null,
@@ -667,6 +673,7 @@ export async function updatePartnerPushSubscription(options: {
   shareCode: string;
   pushToken: string | null;
   alertsEnabled: boolean;
+  role: 'owner' | 'partner';
 }) {
   const normalizedCode = normalizeShareCode(options.shareCode);
 
@@ -678,10 +685,21 @@ export async function updatePartnerPushSubscription(options: {
   const shareRef = doc(session.db, PARTNER_SHARE_COLLECTION, normalizedCode);
 
   try {
+    const updates =
+      options.role === 'owner'
+        ? {
+            ownerPushToken: options.alertsEnabled ? options.pushToken : null,
+            ownerPushAlertsEnabled: options.alertsEnabled,
+            ownerPushUpdatedAtIso: new Date().toISOString(),
+          }
+        : {
+            partnerPushToken: options.alertsEnabled ? options.pushToken : null,
+            partnerPushAlertsEnabled: options.alertsEnabled,
+            partnerPushUpdatedAtIso: new Date().toISOString(),
+          };
+
     await updateDoc(shareRef, {
-      partnerPushToken: options.alertsEnabled ? options.pushToken : null,
-      partnerPushAlertsEnabled: options.alertsEnabled,
-      partnerPushUpdatedAtIso: new Date().toISOString(),
+      ...updates,
     });
   } catch (caughtError) {
     throw createPartnerFriendlyError(caughtError, 'Unable to update partner alerts right now.');

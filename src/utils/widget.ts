@@ -1,7 +1,16 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { MealType } from './meals';
 
-export type WidgetLaunchTarget = 'home' | 'hydration' | 'meals' | 'mood' | 'sleep' | 'shift' | 'notes';
+export type WidgetLaunchTarget =
+  | 'home'
+  | 'hydration'
+  | 'meals'
+  | 'mood'
+  | 'sleep'
+  | 'shift'
+  | 'notes'
+  | 'partner_dashboard'
+  | 'partner_settings';
 export type WidgetPendingQuickAction =
   | {
       kind: 'hydration';
@@ -28,8 +37,20 @@ interface WidgetSnapshot {
   supportText: string;
 }
 
+interface PartnerWidgetSnapshot {
+  connected: boolean;
+  ownerNameText: string;
+  statusText: string;
+  updatedText: string;
+  hydrationText: string;
+  mealsText: string;
+  studyText: string;
+  noteText: string;
+}
+
 interface WidgetBridgePlugin {
   syncSnapshot(snapshot: WidgetSnapshot): Promise<void>;
+  syncPartnerSnapshot(snapshot: PartnerWidgetSnapshot): Promise<void>;
   consumeLaunchAction(): Promise<{ target?: string | null }>;
   consumePendingQuickActions(): Promise<{ actions?: unknown[] }>;
 }
@@ -41,7 +62,17 @@ function isAndroid() {
 }
 
 function isWidgetLaunchTarget(value: string | null | undefined): value is WidgetLaunchTarget {
-  return ['home', 'hydration', 'meals', 'mood', 'sleep', 'shift', 'notes'].includes(value ?? '');
+  return [
+    'home',
+    'hydration',
+    'meals',
+    'mood',
+    'sleep',
+    'shift',
+    'notes',
+    'partner_dashboard',
+    'partner_settings',
+  ].includes(value ?? '');
 }
 
 export async function syncHerCareWidgetSnapshot(snapshot: WidgetSnapshot) {
@@ -51,6 +82,18 @@ export async function syncHerCareWidgetSnapshot(snapshot: WidgetSnapshot) {
 
   try {
     await WidgetBridge.syncSnapshot(snapshot);
+  } catch {
+    // Keep widget sync best-effort so it never blocks app flows.
+  }
+}
+
+export async function syncHerCarePartnerWidgetSnapshot(snapshot: PartnerWidgetSnapshot) {
+  if (!isAndroid()) {
+    return;
+  }
+
+  try {
+    await WidgetBridge.syncPartnerSnapshot(snapshot);
   } catch {
     // Keep widget sync best-effort so it never blocks app flows.
   }

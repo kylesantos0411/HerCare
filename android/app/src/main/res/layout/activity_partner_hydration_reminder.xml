@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/partner_reminder_background"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/partner_reminder_card_background"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/partner_reminder_kicker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/partner_reminder_kicker"
+            android:textAllCaps="true"
+            android:textColor="@color/partner_reminder_muted"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/partner_reminder_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/partner_reminder_text"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/partner_reminder_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:lineSpacingExtra="4dp"
+            android:textColor="@color/partner_reminder_text"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/partner_reminder_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/partner_reminder_timer_initial"
+            android:textColor="@color/partner_reminder_accent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/partner_reminder_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/partner_reminder_note"
+            android:textColor="@color/partner_reminder_muted"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/partner_reminder_open_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="@color/partner_reminder_accent"
+            android:text="@string/partner_reminder_open_action"
+            android:textAllCaps="false"
+            android:textColor="@color/partner_reminder_button_text" />
+
+        <Button
+            android:id="@+id/partner_reminder_dismiss_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/partner_reminder_secondary_button"
+            android:text="@string/partner_reminder_dismiss_action"
+            android:textAllCaps="false"
+            android:textColor="@color/partner_reminder_text" />
+    </LinearLayout>
+
+</LinearLayout>

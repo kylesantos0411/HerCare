@@ -97,12 +97,27 @@ The Play Store bundle is generated at:
 ## Useful Scripts
 
 - `npm run dev` - start the Vite dev server
+- `npm run dev:simple` - start the HerCare Essentials variant
 - `npm run build` - run TypeScript build and Vite production build
+- `npm run build:simple` - build the HerCare Essentials web assets
 - `npm run apk:debug` - build the debug APK
+- `npm run apk:simple:debug` - build the HerCare Essentials debug APK
 - `npm run apk:release` - build the signed release APK
+- `npm run apk:simple:release` - build the signed HerCare Essentials release APK
 - `npm run aab:release` - build the signed release App Bundle
+- `npm run aab:simple:release` - build the signed HerCare Essentials release App Bundle
 - `npm run push:deploy` - deploy Firebase functions only
 - `npm run lint` - run ESLint
+
+## Variant Workspaces
+
+The main HerCare app continues to live in the root `src/`, `android/`, and `design/` folders.
+
+For HerCare Essentials specific planning, copy, branding, and release prep, use:
+
+`variants/hercare-essentials/`
+
+That folder is the safe place to organize Essentials-only work before we decide whether a change should stay shared or branch into its own implementation.
 
 ## Project Structure
 
@@ -115,6 +130,7 @@ src/
 android/         Capacitor Android project
 functions/       Firebase Cloud Functions
 design/          Logo and supporting design assets
+variants/        Variant-specific workspaces and planning folders
 ```
 
 ## Current Highlights

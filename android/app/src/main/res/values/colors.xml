@@ -16,4 +16,22 @@
     <color name="widget_text">#F7F1E7</color>
     <color name="widget_muted">#D3D7D2</color>
     <color name="widget_label">#9ED8CC</color>
+
+    <color name="partner_widget_surface_start">#1B151D</color>
+    <color name="partner_widget_surface_mid">#2A1F2D</color>
+    <color name="partner_widget_surface_end">#24302B</color>
+    <color name="partner_widget_outline">#6A6770</color>
+    <color name="partner_widget_chip">#302632</color>
+    <color name="partner_widget_chip_outline">#5E5563</color>
+    <color name="partner_widget_pill_primary">#9D7388</color>
+    <color name="partner_widget_pill_secondary">#24302B</color>
+    <color name="partner_widget_pill_secondary_outline">#6B8678</color>
+    <color name="partner_widget_text">#F7EEF3</color>
+    <color name="partner_widget_muted">#D1C4CC</color>
+    <color name="partner_widget_label">#B7D8C5</color>
+    <color name="partner_reminder_text">#F8F1F4</color>
+    <color name="partner_reminder_muted">#D4C8CE</color>
+    <color name="partner_reminder_accent">#B7D8C5</color>
+    <color name="partner_reminder_button_text">#1A141B</color>
+    <color name="partner_reminder_secondary_button">#3A2C37</color>
 </resources>
