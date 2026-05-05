@@ -513,21 +513,18 @@ export async function connectToPartnerShare(shareCode: string, partnerName: stri
   }
 
   const session = await ensureConfiguredSession();
-  const updateResult = await session.supabase
-    .from(PARTNER_SHARE_TABLE)
-    .update({
-      partner_uid: session.user.id,
-      partner_name: partnerName.trim() || 'Kai',
-      updated_at: new Date().toISOString(),
-    }, { count: 'exact' })
-    .eq('share_code', normalizedCode)
-    .or(`partner_uid.is.null,partner_uid.eq.${session.user.id}`);
+  const claimResult = await session.supabase.rpc('claim_partner_share', {
+    share_code_input: normalizedCode,
+    partner_name_input: partnerName.trim() || 'Kai',
+  });
 
-  if (updateResult.error) {
-    throw createPartnerFriendlyError(updateResult.error, 'Unable to open partner view right now.');
+  if (claimResult.error) {
+    throw createPartnerFriendlyError(claimResult.error, 'Unable to open partner view right now.');
   }
 
-  if (!updateResult.count) {
+  const claimedShare = claimResult.data as { shareCode?: string } | null;
+
+  if (!claimedShare?.shareCode) {
     throw new Error('That share code is unavailable. Check the code and try again.');
   }
 

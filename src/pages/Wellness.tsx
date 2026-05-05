@@ -14,8 +14,8 @@ import {
 import {
   formatHydrationAmount,
   getCurrentHydrationCount,
-  getLatestHydrationEntry,
   getLatestMoodEntry,
+  getTodayHydrationEntries,
   moodLabels,
   type HydrationEntry,
   type MoodEntry,
@@ -40,8 +40,8 @@ export const Wellness: React.FC<WellnessProps> = ({ onNavigate }) => {
 
   const latestSleepLog = getLatestSleepLog(sleepLogs);
   const latestMoodEntry = getLatestMoodEntry(moodEntries);
-  const latestHydrationEntry = getLatestHydrationEntry(hydrationHistory);
   const glasses = getCurrentHydrationCount(hydrationHistory, storedGlasses, referenceDate);
+  const latestHydrationEntry = getTodayHydrationEntries(hydrationHistory, referenceDate)[0] ?? null;
   const hydrationProgress = Math.min((glasses / waterGoal) * 100, 100);
   const displayedMood = latestMoodEntry?.mood ?? currentMood;
   const sleepDurationLabel = latestSleepLog ? formatDuration(latestSleepLog.durationMinutes) : 'No log yet';

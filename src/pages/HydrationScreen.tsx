@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { useCurrentDayKey } from '../hooks/useCurrentDayKey';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import {
+  createHydrationEntry,
   formatHydrationAmount,
   getCurrentHydrationCount,
   getTodayHydrationEntries,
@@ -28,29 +29,23 @@ export const HydrationScreen: React.FC<HydrationScreenProps> = ({ onBack, onSave
 
   const [draftHistory, setDraftHistory] = useState(storedHistory);
   const [draftReminders, setDraftReminders] = useState(storedReminders);
-  const draftGlasses = useMemo(
-    () => getCurrentHydrationCount(draftHistory, storedGlasses, referenceDate),
-    [draftHistory, referenceDate, storedGlasses],
-  );
+  const [draftGlasses, setDraftGlasses] = useState(() => getCurrentHydrationCount(storedHistory, storedGlasses, referenceDate));
   const todayHistory = useMemo(() => getTodayHydrationEntries(draftHistory, referenceDate), [draftHistory, referenceDate]);
 
   const progress = useMemo(() => Math.min((draftGlasses / waterGoal) * 100, 100), [draftGlasses, waterGoal]);
 
   const addIntake = (amount: number) => {
-    const now = new Date();
-    const entry: HydrationEntry = {
-      id: `${now.getTime()}-${amount}`,
-      amount,
-      loggedAt: now.toISOString(),
-      timeLabel: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    const entry = createHydrationEntry(amount);
+    const nextHistory = [entry, ...draftHistory];
+    const nextGlasses = draftGlasses + amount;
 
-    setDraftHistory((currentHistory) => [entry, ...currentHistory]);
+    setDraftHistory(nextHistory);
+    setDraftGlasses(nextGlasses);
+    setStoredHistory(nextHistory);
+    setStoredGlasses(nextGlasses);
   };
 
   const handleSave = () => {
-    setStoredGlasses(draftGlasses);
-    setStoredHistory(draftHistory);
     setStoredReminders(draftReminders);
     onSave();
   };
