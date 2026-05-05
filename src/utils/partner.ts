@@ -513,33 +513,22 @@ export async function connectToPartnerShare(shareCode: string, partnerName: stri
   }
 
   const session = await ensureConfiguredSession();
-  let currentShareRow: PartnerShareRow | null;
-
-  try {
-    currentShareRow = await getPartnerShareRow(normalizedCode);
-  } catch (caughtError) {
-    throw createPartnerFriendlyError(caughtError, 'Unable to open partner view right now.');
-  }
-
-  if (!currentShareRow) {
-    throw new Error('That share code is unavailable. Check the code and try again.');
-  }
-
-  if (currentShareRow.partner_uid && currentShareRow.partner_uid !== session.user.id) {
-    throw new Error('That share code is unavailable. Check the code and try again.');
-  }
-
   const updateResult = await session.supabase
     .from(PARTNER_SHARE_TABLE)
     .update({
       partner_uid: session.user.id,
       partner_name: partnerName.trim() || 'Kai',
       updated_at: new Date().toISOString(),
-    })
-    .eq('share_code', normalizedCode);
+    }, { count: 'exact' })
+    .eq('share_code', normalizedCode)
+    .or(`partner_uid.is.null,partner_uid.eq.${session.user.id}`);
 
   if (updateResult.error) {
     throw createPartnerFriendlyError(updateResult.error, 'Unable to open partner view right now.');
+  }
+
+  if (!updateResult.count) {
+    throw new Error('That share code is unavailable. Check the code and try again.');
   }
 
   return normalizedCode;
