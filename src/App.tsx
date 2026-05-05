@@ -30,6 +30,7 @@ import { useCurrentDayKey } from './hooks/useCurrentDayKey';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { APP_VERSION } from './utils/appInfo';
 import { fetchLatestAppUpdate, hasNewerAppUpdate, openAppUpdatePage, type AppUpdateInfo } from './utils/appUpdate';
+import { startBackgroundMusic, stopBackgroundMusic } from './utils/backgroundMusic';
 import {
   clearScheduledCareNotifications,
   syncLowSleepAlert,
@@ -157,6 +158,7 @@ function App() {
   const [hasCompletedSetup, setHasCompletedSetup] = useLocalStorage('hercare_setup_complete', false);
   const [isLoggedIn, setIsLoggedIn] = useLocalStorage('hercare_logged_in', hasCompletedSetup);
   const [nightShiftEnabled, setNightShiftEnabled] = useLocalStorage('hercare_night_shift_enabled', false);
+  const [backgroundMusicEnabled, setBackgroundMusicEnabled] = useLocalStorage('hercare_background_music_enabled', false);
   const [notificationsEnabled] = useLocalStorage('hercare_notifications_enabled', true);
   const [studyAlertsEnabled] = useLocalStorage('hercare_study_alerts_enabled', true);
   const [hydrationRemindersEnabled] = useLocalStorage('hercare_hydration_reminders_enabled', true);
@@ -286,6 +288,36 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  useEffect(() => {
+    if (!backgroundMusicEnabled) {
+      stopBackgroundMusic();
+      return;
+    }
+
+    const tryStartMusic = () => {
+      void startBackgroundMusic();
+    };
+
+    const handleVisibilityResume = () => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        tryStartMusic();
+      }
+    };
+
+    tryStartMusic();
+    window.addEventListener('pointerdown', tryStartMusic);
+    window.addEventListener('keydown', tryStartMusic);
+    window.addEventListener('focus', tryStartMusic);
+    document.addEventListener('visibilitychange', handleVisibilityResume);
+
+    return () => {
+      window.removeEventListener('pointerdown', tryStartMusic);
+      window.removeEventListener('keydown', tryStartMusic);
+      window.removeEventListener('focus', tryStartMusic);
+      document.removeEventListener('visibilitychange', handleVisibilityResume);
+    };
+  }, [backgroundMusicEnabled]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -983,6 +1015,8 @@ function App() {
             onOpenPartnerSharing={() => setActiveTab('partner_sharing')}
             nightShiftEnabled={nightShiftEnabled}
             onNightShiftChange={setNightShiftEnabled}
+            backgroundMusicEnabled={backgroundMusicEnabled}
+            onBackgroundMusicChange={setBackgroundMusicEnabled}
             showPartnerTools={SUPPORTS_PARTNER_FEATURES}
             onLogout={() => {
               setIsLoggedIn(false);
@@ -1028,6 +1062,8 @@ function App() {
               onOpenPartnerSharing={() => setActiveTab('settings')}
               nightShiftEnabled={nightShiftEnabled}
               onNightShiftChange={setNightShiftEnabled}
+              backgroundMusicEnabled={backgroundMusicEnabled}
+              onBackgroundMusicChange={setBackgroundMusicEnabled}
               showPartnerTools={false}
               onLogout={() => {
                 setIsLoggedIn(false);

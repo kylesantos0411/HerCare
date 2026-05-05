@@ -7,6 +7,7 @@ import {
   HeartHandshake,
   Link2,
   MonitorSmartphone,
+  Music4,
   Moon,
 } from 'lucide-react';
 import { Card } from '../components/Card';
@@ -20,6 +21,8 @@ interface SettingsProps {
   onOpenPartnerSharing: () => void;
   nightShiftEnabled: boolean;
   onNightShiftChange: (enabled: boolean) => void;
+  backgroundMusicEnabled: boolean;
+  onBackgroundMusicChange: (enabled: boolean) => void;
   onLogout: () => void;
   showPartnerTools: boolean;
 }
@@ -29,6 +32,8 @@ export const Settings: React.FC<SettingsProps> = ({
   onOpenPartnerSharing,
   nightShiftEnabled,
   onNightShiftChange,
+  backgroundMusicEnabled,
+  onBackgroundMusicChange,
   onLogout,
   showPartnerTools,
 }) => {
@@ -126,6 +131,27 @@ export const Settings: React.FC<SettingsProps> = ({
                 checked={studyAlertsEnabled}
                 onChange={(event) => setStudyAlertsEnabled(event.target.checked)}
                 aria-label="Toggle study timer alerts"
+              />
+              <span className="slider"></span>
+            </label>
+          </div>
+          <div className="settings-divider"></div>
+          <div className="settings-item">
+            <div className="settings-icon-name">
+              <div className="icon-wrapper variant-primary">
+                <Music4 size={20} />
+              </div>
+              <div className="settings-label-stack">
+                <span>Background music</span>
+                <small className="settings-item-hint">Soft ambient loop that stays on until you switch it off</small>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={backgroundMusicEnabled}
+                onChange={(event) => onBackgroundMusicChange(event.target.checked)}
+                aria-label="Toggle background music"
               />
               <span className="slider"></span>
             </label>
