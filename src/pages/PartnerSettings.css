@@ -39,6 +39,26 @@
   font-size: 14px;
 }
 
+.partner-settings-warning {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.partner-settings-action-btn {
+  margin-top: 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.partner-settings-action-btn:active {
+  transform: translateY(1px);
+}
+
 .partner-disconnect-btn {
   margin-top: auto;
   border: none;

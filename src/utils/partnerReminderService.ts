@@ -10,6 +10,11 @@ interface PartnerReminderBridgePlugin {
     supabaseUrl: string;
     publishableKey: string;
   }): Promise<void>;
+  canUseFullScreenIntent(): Promise<{
+    supported: boolean;
+    allowed: boolean;
+  }>;
+  openFullScreenIntentSettings(): Promise<void>;
 }
 
 const PartnerReminderBridge = registerPlugin<PartnerReminderBridgePlugin>('PartnerReminderBridge');
@@ -62,4 +67,23 @@ export async function syncPartnerReminderService(options: {
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
     publishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
   });
+}
+
+export async function getPartnerFullScreenIntentAccess() {
+  if (!isAndroidNative()) {
+    return {
+      supported: false,
+      allowed: false,
+    };
+  }
+
+  return PartnerReminderBridge.canUseFullScreenIntent();
+}
+
+export async function openPartnerFullScreenIntentSettings() {
+  if (!isAndroidNative()) {
+    return;
+  }
+
+  await PartnerReminderBridge.openFullScreenIntentSettings();
 }

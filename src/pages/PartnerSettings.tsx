@@ -1,8 +1,12 @@
-import React, { useEffect } from 'react';
-import { BellRing, ChevronLeft, Link2, Moon, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BellRing, ChevronLeft, Link2, Moon, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Card } from '../components/Card';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { isSupabaseConfigured } from '../utils/firebase';
+import {
+  getPartnerFullScreenIntentAccess,
+  openPartnerFullScreenIntentSettings,
+} from '../utils/partnerReminderService';
 import './PartnerSettings.css';
 
 interface PartnerSettingsProps {
@@ -25,6 +29,8 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
     'hercare_partner_push_status',
     'Background reminders will be ready after this phone connects.',
   );
+  const [fullScreenIntentSupported, setFullScreenIntentSupported] = useState(false);
+  const [fullScreenIntentAllowed, setFullScreenIntentAllowed] = useState(false);
   const configured = isSupabaseConfigured();
 
   useEffect(() => {
@@ -32,6 +38,25 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
       setPartnerPushStatus('Background reminders will be ready after this phone connects.');
     }
   }, [configured, setPartnerPushStatus, shareCode]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    void (async () => {
+      const access = await getPartnerFullScreenIntentAccess();
+
+      if (isCancelled) {
+        return;
+      }
+
+      setFullScreenIntentSupported(access.supported);
+      setFullScreenIntentAllowed(access.allowed);
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   return (
     <div className="partner-settings-screen animation-slide-in">
@@ -123,13 +148,42 @@ export const PartnerSettings: React.FC<PartnerSettingsProps> = ({
 
       <Card className="partner-settings-note">
         <div className="partner-settings-copy">
-          <BellRing size={18} />
+          {fullScreenIntentSupported && !fullScreenIntentAllowed ? <ShieldAlert size={18} /> : <BellRing size={18} />}
           <div>
             <strong>Reminder behavior</strong>
-            <p>The Android app keeps a small background service active while this toggle is on.</p>
+            <p>
+              The Android app keeps a small background service active while this toggle is on. On newer Android
+              versions, automatic full-screen launch usually works only when the phone is locked or the screen is off.
+              If the phone is already open, Android may show a heads-up notification instead.
+            </p>
           </div>
         </div>
       </Card>
+
+      {fullScreenIntentSupported && !fullScreenIntentAllowed && (
+        <Card className="partner-settings-note partner-settings-warning">
+          <div className="partner-settings-copy">
+            <ShieldAlert size={18} />
+            <div>
+              <strong>Full-screen notifications are blocked</strong>
+              <p>
+                HerCare can still post nudges, but Android is currently downgrading them to a normal heads-up
+                notification. Turn on Full screen notifications for HerCare if you want the best chance of an automatic
+                takeover when the phone is locked.
+              </p>
+              <button
+                type="button"
+                className="partner-settings-action-btn"
+                onClick={() => {
+                  void openPartnerFullScreenIntentSettings();
+                }}
+              >
+                Open full-screen settings
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <button className="partner-disconnect-btn" onClick={onDisconnect}>
         Disconnect This Phone
